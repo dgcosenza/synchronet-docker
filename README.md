@@ -210,7 +210,7 @@ The build stage installs current Debian compiler and upstream prerequisites, inc
 
 ## Daily maintenance and CI
 
-The public repository's GitHub Actions workflow currently runs daily and on manual dispatch. Each run polls Synchronet master, resolves the current version from source, fetches the current Deno release, rebuilds on the floating Debian Trixie base with apt-get upgrade, and scans with Trivy. A fixable critical or high vulnerability fails the scan and prevents publication.
+The public repository's GitHub Actions workflow runs daily, on pushes to `main`, and on manual dispatch. Each run polls Synchronet master, resolves the current version from source, fetches the current Deno release, rebuilds on the floating Debian Trixie base with apt-get upgrade, and scans with Trivy. A fixable critical or high vulnerability fails the scan and prevents publication. When publishing is enabled, the workflow also syncs the Docker Hub short description from `DOCKERHUB_SHORT_DESCRIPTION.txt` and the full overview from this README.
 
 The workflow builds and scans even when Docker Hub credentials are absent. Publishing requires the GitHub Actions secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN; if either is missing, the Hub push is skipped.
 
@@ -238,3 +238,4 @@ The build adapts the ISC-licensed bbs-io/synchronet-docker recipe and initializa
 
 - 2026-11-20: Initial Debian 13 image from Synchronet 3.22a commit 6bd53d6b60c4edaddead52a36be2c5479f1aeafb; uses Debian Trixie 13.7, Deno 2.9.8, a multi-stage source build, UID/GID 1000 runtime, webv4 healthcheck, and digest-based release policy.
 - 2026-11-20: Updated the default source pin to Synchronet 3.22a commit 933e8499ac81251da7929f16cdcff3ca71239cdb after upstream signed-character fixes.
+- 2026-11-20: Published immutable 3.22a source-commit tags and current `nightly`/`latest` tags; GitHub Actions now runs on main pushes and syncs the Docker Hub overview after successful publication.
