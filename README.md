@@ -213,7 +213,9 @@ The public repository's GitHub Actions workflow runs daily and on manual dispatc
 
 The workflow builds and scans even when Docker Hub credentials are absent. Its push step requires the GitHub Actions secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN; Dani must create a Docker Hub access token and add those secrets before unattended Hub publishing can start. The Server's existing Docker Hub login is reserved for approved manual pushes and is never copied to GitHub.
 
-For Server deployments, pin the dgcosenza/synchronet digest and use the fleet's docker-tag-check and docker-tag-promote helpers. Do not deploy an unpinned moving tag, add Watchtower, or change the existing update-all hook. The home Server's update-all.timer runs at 01:00 ART; do not interrupt an active update.
+For Server deployments, keep the moving tag paired with its immutable registry digest so the fleet helpers can detect upstream movement without running an unpinned image. To establish the initial pin, pull `dgcosenza/synchronet:nightly`, read its manifest digest with `docker image inspect dgcosenza/synchronet:nightly --format '{{index .RepoDigests 0}}'`, then set the Compose image to `dgcosenza/synchronet:nightly@sha256:<manifest-digest>`. Use the service's Compose name with `docker compose pull <service>` and `docker compose up -d --no-deps <service>` when applying that exact digest.
+
+The fleet's weekly `/opt/fnxlabs/bin/docker-tag-check.sh` compares pinned images with their floating tags and reports movement. After reviewing and testing a new Synchronet image and its data compatibility, promote the BBS container with `/opt/fnxlabs/bin/docker-tag-promote.sh bbs`; the helper backs up the Compose file, updates its digest pin, checks the project, and rolls back if the promotion fails. Do not deploy an unpinned moving tag, add Watchtower, or change the existing `update-all` hook. The home Server's `update-all.timer` runs at 01:00 ART; do not interrupt an active update.
 
 ## Troubleshooting
 
