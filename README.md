@@ -213,7 +213,9 @@ The public repository's GitHub Actions workflow runs daily and on manual dispatc
 
 The workflow builds and scans even when Docker Hub credentials are absent. Its push step requires the GitHub Actions secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN.
 
-For production deployments, pin the dgcosenza/synchronet digest and use digest-check and promotion tooling. Do not deploy an unpinned moving tag, add Watchtower.
+For production deployments, keep the moving tag paired with its immutable registry digest so the tooling can detect upstream movement without running an unpinned image. To establish the initial pin, pull `dgcosenza/synchronet:nightly`, read its manifest digest with `docker image inspect dgcosenza/synchronet:nightly --format '{{index .RepoDigests 0}}'`, then set the Compose image to `dgcosenza/synchronet:nightly@sha256:<manifest-digest>`. Use the service's Compose name with `docker compose pull <service>` and `docker compose up -d --no-deps <service>` when applying that exact digest.
+
+Check periodically whether the moving tag points to a new digest. After reviewing and testing a new Synchronet image against a copy of your data, back up the Compose file and data, update the digest pin, recreate only the BBS service, verify the healthcheck, and roll back to the previous digest if verification fails. Do not deploy an unpinned moving tag or use automatic updaters such as Watchtower.
 
 ## Troubleshooting
 
