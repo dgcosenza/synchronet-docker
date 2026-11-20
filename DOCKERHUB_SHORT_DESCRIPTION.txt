@@ -1,0 +1,1 @@
+Source-built Synchronet BBS for Debian 13, fully upgraded and scanned daily for vulnerabilities.

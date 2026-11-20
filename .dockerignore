@@ -1,0 +1,12 @@
+.git
+.work
+.priv
+logs
+out
+data
+*.tar
+*.tar.gz
+*.tgz
+.env
+.env.*
+.DS_Store

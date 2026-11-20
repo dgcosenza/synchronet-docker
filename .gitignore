@@ -1,0 +1,7 @@
+.work/
+.priv/
+logs/
+out/
+.DS_Store
+.env
+.env.*
