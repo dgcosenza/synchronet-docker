@@ -46,7 +46,7 @@ RUN groupadd --gid 1000 sbbs \
     && install -d -o sbbs -g sbbs /sbbs-data
 
 FROM runtime-base AS build
-ARG SYNCHRONET_COMMIT=6bd53d6b60c4edaddead52a36be2c5479f1aeafb
+ARG SYNCHRONET_COMMIT=933e8499ac81251da7929f16cdcff3ca71239cdb
 ARG SYNCHRONET_VERSION=3.22a
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -85,7 +85,7 @@ RUN chmod 0755 /sbbs/scripts/sbbs /sbbs/scripts/sbbs-init /sbbs/scripts/post-bui
 
 FROM runtime-base AS runtime
 ARG BUILD_DATE=unknown
-ARG SYNCHRONET_COMMIT=6bd53d6b60c4edaddead52a36be2c5479f1aeafb
+ARG SYNCHRONET_COMMIT=933e8499ac81251da7929f16cdcff3ca71239cdb
 ARG SYNCHRONET_VERSION=3.22a
 ARG DENO_VERSION=2.9.8
 
