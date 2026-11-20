@@ -1,0 +1,15 @@
+#!/bin/bash
+set -euo pipefail
+
+export DENO_DIR="${DENO_DIR:-/sbbs-data/.deno}"
+sudo -n /usr/bin/mkdir -p "$DENO_DIR/gen" "$DENO_DIR/deps" "$DENO_DIR/bin" /sbbs-data/data
+
+sudo -n /usr/bin/env DENO_DIR="$DENO_DIR" \
+    /usr/bin/flock --exclusive /sbbs-data/.synchronet-init.lock \
+    /usr/local/bin/deno run --quiet \
+    --allow-run --allow-read --allow-write \
+    /sbbs/scripts/init.ts
+
+# The initializer creates links under /sbbs and /, then writes defaults into
+# the mounted volume. Restore ownership for the non-root BBS process.
+sudo -n /usr/bin/chown -R 1000:1000 /sbbs-data
