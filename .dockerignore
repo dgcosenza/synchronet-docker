@@ -3,6 +3,13 @@
 .priv
 logs
 out
+tools
+BRIEF.md
+CLAUDE.md
+DOCS-REQUIREMENT-*.md
+HUB-GITHUB-*.md
+PROGRESS.md
+REPORT.md
 data
 *.tar
 *.tar.gz

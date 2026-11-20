@@ -10,7 +10,8 @@ The persistent data mount follows the /sbbs-data layout used by bbsio/synchronet
 
 ## Tags and versioning
 
-- dgcosenza/synchronet:3.22a-6bd53d6 identifies Synchronet 3.22a and source commit 6bd53d6b60c4edaddead52a36be2c5479f1aeafb. Version-and-commit tags are immutable after publication.
+- dgcosenza/synchronet:3.22a-933e849 identifies the current Synchronet 3.22a build from source commit 933e8499ac81251da7929f16cdcff3ca71239cdb. Version-and-commit tags are immutable after publication.
+- dgcosenza/synchronet:3.22a-6bd53d6 identifies the previous 3.22a build from commit 6bd53d6b60c4edaddead52a36be2c5479f1aeafb. It remains an immutable rollback/version tag and is not the moving current build.
 - dgcosenza/synchronet:nightly moves to the latest upstream master commit that builds, passes the image scan, and is published by CI or the approved manual Server workflow.
 - dgcosenza/synchronet:latest aliases the same current Debian 13 and current Synchronet build as nightly. It is never a frozen historical release.
 - Pin production deployments by registry digest after review. A moving tag is a discovery channel, not a deployment pin.
@@ -203,15 +204,15 @@ The image checks http://127.0.0.1/ with curl every 120 seconds, allows a 120-sec
 
 The build targets linux/amd64. It uses debian:trixie-slim, upgrades packages at build time, verifies the Deno archive SHA-256, and compiles the exact Synchronet commit passed as SYNCHRONET_COMMIT.
 
-    docker buildx build --platform linux/amd64 --load --build-arg SYNCHRONET_COMMIT=6bd53d6b60c4edaddead52a36be2c5479f1aeafb --build-arg SYNCHRONET_VERSION=3.22a --build-arg DENO_VERSION=2.9.8 --build-arg DENO_SHA256=e890975bc2549807bbcc0b584ffafda72cc7c93349dd99c80483dd784f6c4609 --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" --tag dgcosenza/synchronet:3.22a-6bd53d6 .
+    docker buildx build --platform linux/amd64 --load --build-arg SYNCHRONET_COMMIT=933e8499ac81251da7929f16cdcff3ca71239cdb --build-arg SYNCHRONET_VERSION=3.22a --build-arg DENO_VERSION=2.9.8 --build-arg DENO_SHA256=e890975bc2549807bbcc0b584ffafda72cc7c93349dd99c80483dd784f6c4609 --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" --tag dgcosenza/synchronet:3.22a-933e849 .
 
 The build stage installs current Debian compiler and upstream prerequisites, including GNU make, GCC/G++, libarchive, ncurses, NSPR, OpenSSL development files, Perl, Python 3, patch, and pkgconf. Synchronet builds vendored cryptlib and SpiderMonkey/libmozjs from the pinned upstream tree. The final stage contains runtime libraries and tools, not the compiler toolchain. Debian packages and Deno can change between builds; use the image digest to identify an exact published artifact.
 
 ## Daily maintenance and CI
 
-The public repository's GitHub Actions workflow runs daily and on manual dispatch. Each run polls Synchronet master, resolves the current version from source, fetches the current Deno release, rebuilds on the floating Debian Trixie base with apt-get upgrade, and scans with Trivy. A fixable critical or high vulnerability fails the scan and prevents publication.
+The public repository's GitHub Actions workflow currently runs daily and on manual dispatch. Each run polls Synchronet master, resolves the current version from source, fetches the current Deno release, rebuilds on the floating Debian Trixie base with apt-get upgrade, and scans with Trivy. A fixable critical or high vulnerability fails the scan and prevents publication.
 
-The workflow builds and scans even when Docker Hub credentials are absent. Its push step requires the GitHub Actions secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN; Dani must create a Docker Hub access token and add those secrets before unattended Hub publishing can start. The Server's existing Docker Hub login is reserved for approved manual pushes and is never copied to GitHub.
+The workflow builds and scans even when Docker Hub credentials are absent. Publishing requires the GitHub Actions secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN; if either is missing, the Hub push is skipped. A manual Server publication remains the approved fallback, and the Server's Docker Hub login is never copied to GitHub.
 
 For Server deployments, keep the moving tag paired with its immutable registry digest so the fleet helpers can detect upstream movement without running an unpinned image. To establish the initial pin, pull `dgcosenza/synchronet:nightly`, read its manifest digest with `docker image inspect dgcosenza/synchronet:nightly --format '{{index .RepoDigests 0}}'`, then set the Compose image to `dgcosenza/synchronet:nightly@sha256:<manifest-digest>`. Use the service's Compose name with `docker compose pull <service>` and `docker compose up -d --no-deps <service>` when applying that exact digest.
 
@@ -235,4 +236,5 @@ The build adapts the ISC-licensed bbs-io/synchronet-docker recipe and initializa
 
 ## Changelog
 
-- 2026-11-20: Initial Debian 13 image, built from Synchronet 3.22a commit 6bd53d6b60c4edaddead52a36be2c5479f1aeafb; uses Debian Trixie 13.7, Deno 2.9.8, a multi-stage source build, UID/GID 1000 runtime, webv4 healthcheck, and digest-based release policy.
+- 2026-11-20: Initial Debian 13 image from Synchronet 3.22a commit 6bd53d6b60c4edaddead52a36be2c5479f1aeafb; uses Debian Trixie 13.7, Deno 2.9.8, a multi-stage source build, UID/GID 1000 runtime, webv4 healthcheck, and digest-based release policy.
+- 2026-11-20: Updated the default source pin to Synchronet 3.22a commit 933e8499ac81251da7929f16cdcff3ca71239cdb after upstream signed-character fixes.
