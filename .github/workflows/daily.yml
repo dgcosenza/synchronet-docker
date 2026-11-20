@@ -3,6 +3,9 @@ name: Daily Synchronet image
 on:
   schedule:
     - cron: "45 4 * * *"
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -86,7 +89,7 @@ jobs:
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "Docker Hub push skipped; Dani must set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN." >> "$GITHUB_STEP_SUMMARY"
+            echo "Docker Hub push skipped; configure the DOCKERHUB_USERNAME and DOCKERHUB_TOKEN Actions secrets to enable publishing." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Log in to Docker Hub
@@ -118,3 +121,26 @@ jobs:
             echo "Debian base: debian:trixie-slim, upgraded during this run."
             echo "Trivy scan passed with no fixable critical or high findings."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Read Docker Hub short description
+        if: ${{ steps.hub.outputs.enabled == 'true' }}
+        id: short_desc
+        shell: bash
+        run: |
+          set -euo pipefail
+          DESC="$(tr -d '\r\n' < DOCKERHUB_SHORT_DESCRIPTION.txt)"
+          if [ "${#DESC}" -gt 100 ]; then
+            echo "ERROR: Docker Hub short description exceeds 100 characters (${#DESC})." >&2
+            exit 1
+          fi
+          echo "text=${DESC}" >> "$GITHUB_OUTPUT"
+
+      - name: Sync Docker Hub repository overview (short and full description)
+        if: ${{ steps.hub.outputs.enabled == 'true' }}
+        uses: peter-evans/dockerhub-description@v5
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: dgcosenza/synchronet
+          short-description: ${{ steps.short_desc.outputs.text }}
+          readme-filepath: ./README.md
