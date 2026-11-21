@@ -10,8 +10,11 @@ The persistent data mount follows the /sbbs-data layout used by bbsio/synchronet
 
 ## Tags and versioning
 
-- dgcosenza/synchronet:3.22a-933e849 identifies the current Synchronet 3.22a build from source commit 933e8499ac81251da7929f16cdcff3ca71239cdb. Version-and-commit tags are immutable after publication.
-- dgcosenza/synchronet:3.22a-6bd53d6 identifies the previous 3.22a build from commit 6bd53d6b60c4edaddead52a36be2c5479f1aeafb. It remains an immutable rollback/version tag and is not the moving current build.
+- dgcosenza/synchronet:3.22a-153b826 identifies the current Synchronet 3.22a build from source commit 153b826e650a137387b1d632d042905eaa526b81. Version-and-commit tags are immutable after publication.
+- dgcosenza/synchronet:3.22a-0b66945 identifies the previous CI build from commit 0b669450bfc6dedcc42e5ae41cc70e880a26df8c. It remains an immutable version tag and is not the moving current build.
+- dgcosenza/synchronet:3.22a-e1a997c identifies the earlier build from commit e1a997ca9d009389416e39f5e2c83c239c82103f. It remains an immutable version tag.
+- dgcosenza/synchronet:3.22a-933e849 identifies an older 3.22a build from commit 933e8499ac81251da7929f16cdcff3ca71239cdb. It remains an immutable rollback/version tag.
+- dgcosenza/synchronet:3.22a-6bd53d6 is the older immutable rollback/version tag from commit 6bd53d6b60c4edaddead52a36be2c5479f1aeafb.
 - dgcosenza/synchronet:nightly moves to the latest upstream master commit that builds, passes the image scan, and is published by CI or the approved manual Server workflow.
 - dgcosenza/synchronet:latest aliases the same current Debian 13 and current Synchronet build as nightly. It is never a frozen historical release.
 - Pin production deployments by registry digest after review. A moving tag is a discovery channel, not a deployment pin.
@@ -204,7 +207,7 @@ The image checks http://127.0.0.1/ with curl every 120 seconds, allows a 120-sec
 
 The build targets linux/amd64. It uses debian:trixie-slim, upgrades packages at build time, verifies the Deno archive SHA-256, and compiles the exact Synchronet commit passed as SYNCHRONET_COMMIT.
 
-    docker buildx build --platform linux/amd64 --load --build-arg SYNCHRONET_COMMIT=933e8499ac81251da7929f16cdcff3ca71239cdb --build-arg SYNCHRONET_VERSION=3.22a --build-arg DENO_VERSION=2.9.8 --build-arg DENO_SHA256=e890975bc2549807bbcc0b584ffafda72cc7c93349dd99c80483dd784f6c4609 --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" --tag dgcosenza/synchronet:3.22a-933e849 .
+    docker buildx build --platform linux/amd64 --load --build-arg SYNCHRONET_COMMIT=153b826e650a137387b1d632d042905eaa526b81 --build-arg SYNCHRONET_VERSION=3.22a --build-arg DENO_VERSION=2.9.8 --build-arg DENO_SHA256=e890975bc2549807bbcc0b584ffafda72cc7c93349dd99c80483dd784f6c4609 --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" --tag dgcosenza/synchronet:3.22a-153b826 .
 
 The build stage installs current Debian compiler and upstream prerequisites, including GNU make, GCC/G++, libarchive, ncurses, NSPR, OpenSSL development files, Perl, Python 3, patch, and pkgconf. Synchronet builds vendored cryptlib and SpiderMonkey/libmozjs from the pinned upstream tree. The final stage contains runtime libraries and tools, not the compiler toolchain. Debian packages and Deno can change between builds; use the image digest to identify an exact published artifact.
 
@@ -236,6 +239,8 @@ The build adapts the ISC-licensed bbs-io/synchronet-docker recipe and initializa
 
 ## Changelog
 
+- 2026-11-21: Advanced the default and manual build pin to current Synchronet 3.22a commit 153b826e650a137387b1d632d042905eaa526b81 after verifying both upstream mirrors.
+- 2026-11-21: Updated the default build pin and manual build example to current Synchronet 3.22a commit e1a997ca9d009389416e39f5e2c83c239c82103f; the change leaves mailbox file dates alone when a modification makes no content change.
 - 2026-11-20: Initial Debian 13 image from Synchronet 3.22a commit 6bd53d6b60c4edaddead52a36be2c5479f1aeafb; uses Debian Trixie 13.7, Deno 2.9.8, a multi-stage source build, UID/GID 1000 runtime, webv4 healthcheck, and digest-based release policy.
 - 2026-11-20: Updated the default source pin to Synchronet 3.22a commit 933e8499ac81251da7929f16cdcff3ca71239cdb after upstream signed-character fixes.
 - 2026-11-20: Published immutable 3.22a source-commit tags and current `nightly`/`latest` tags; GitHub Actions now runs on main pushes and syncs the Docker Hub overview after successful publication.
