@@ -16,7 +16,7 @@ The persistent data mount follows the /sbbs-data layout used by bbsio/synchronet
 - dgcosenza/synchronet:latest aliases the same current Debian 13 and current Synchronet build as nightly. It is never a frozen historical release.
 - Pin production deployments by registry digest after review. A moving tag is a discovery channel, not a deployment pin.
 
-The initial build uses Debian 13.7 (debian:trixie-slim) and upgrades all available packages at build time. The version-and-commit tag records the Synchronet source revision; the complete image digest records the exact image, including its Debian packages.
+Each build uses the latest Debian 13 point release (debian:trixie-slim; 13.8 as of 2026-11-24) and upgrades all available packages at build time. The version-and-commit tag records the Synchronet source revision; the complete image digest records the exact image, including its Debian packages.
 
 ## Supported architecture
 
@@ -214,7 +214,7 @@ The public repository's GitHub Actions workflow runs daily, on pushes to `main`,
 
 The workflow builds and scans even when Docker Hub credentials are absent. Publishing requires the GitHub Actions secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN; if either is missing, the Hub push is skipped.
 
-For production deployments, keep the moving tag paired with its immutable registry digest so the tooling can detect upstream movement without running an unpinned image. To establish the initial pin, pull `dgcosenza/synchronet:nightly`, read its manifest digest with `docker image inspect dgcosenza/synchronet:nightly --format '{{index .RepoDigests 0}}'`, then set the Compose image to `dgcosenza/synchronet:nightly@sha256:<manifest-digest>`. Use the service's Compose name with `docker compose pull <service>` and `docker compose up -d --no-deps <service>` when applying that exact digest.
+For production deployments, keep the moving tag paired with its immutable registry digest so tooling can detect upstream movement without running an unpinned image. To establish the initial pin, pull `dgcosenza/synchronet:nightly`, read its manifest digest with `docker image inspect dgcosenza/synchronet:nightly --format '{{index .RepoDigests 0}}'`, then set the Compose image to `dgcosenza/synchronet:nightly@sha256:<manifest-digest>`. Use the service's Compose name with `docker compose pull <service>` and `docker compose up -d --no-deps <service>` when applying that exact digest.
 
 Check periodically whether the moving tag points to a new digest. After reviewing and testing a new Synchronet image against a copy of your data, back up the Compose file and data, update the digest pin, recreate only the BBS service, verify the healthcheck, and roll back to the previous digest if verification fails. Do not deploy an unpinned moving tag or use automatic updaters such as Watchtower.
 
