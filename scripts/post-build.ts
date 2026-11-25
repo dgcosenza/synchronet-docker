@@ -6,6 +6,7 @@ if (/^\s*Interface\s*=.*$/m.test(sbbsIni)) {
     "    Interface = 0.0.0.0",
   );
 }
+sbbsIni = sbbsIni.replaceAll("../webv4", "../web");
 await Deno.writeTextFile(sbbsIniPath, sbbsIni);
 
 const modoptsPath = "/sbbs/ctrl/modopts.ini";
