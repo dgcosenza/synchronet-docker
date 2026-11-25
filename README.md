@@ -31,8 +31,9 @@ The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchro
 | Synchronet BBS | `3.22a (c20f737)` |
 | Deno | `2.9.8` |
 | Base OS | `Debian 13.8 (trixie-slim)` |
-| Last verified build (UTC) | `2026-11-24` |
-| Security gate (Trivy + Grype) | **0 fixable Critical/High** (0 upstream-unfixed) |
+| Last verified build (UTC) | `2026-11-25` |
+| Published digest | `dgcosenza/synchronet@sha256:7afdeb69d4787a98b31b43b424c360ec3abe094d60eb4db980cfa42da9033f89` |
+| Security gate (Trivy + Grype) | **0 fixable Critical/High** (33 upstream-unfixed) |
 <!-- versions:end -->
 
 ---

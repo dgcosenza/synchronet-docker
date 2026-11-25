@@ -7,6 +7,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Mai
 ---
 <!-- changelog:auto -->
 
+## [3.22a-c20f737] — 2026-11-25
+
+### Automated Daily Build
+- Verified components: Synchronet BBS `3.22a (c20f737)`, Deno `2.9.8`, Base OS `Debian 13.8 (trixie-slim)`.
+- Upstream status: no new upstream release since previous build; refreshed base OS and dependencies.
+- Vulnerability gate: **0 fixable Critical/High** in Trivy and Grype (33 upstream-unfixed).
+- Published digest: `dgcosenza/synchronet@sha256:7afdeb69d4787a98b31b43b424c360ec3abe094d60eb4db980cfa42da9033f89`.
+
+---
+
 ## [3.22a] — 2026-11-24
 
 ### Added
