@@ -19,7 +19,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Mai
   - bb64f4d: pdfview.js: Loading message, mouse_stop(), fix the notes
   - 335365b: Merge branch 'nelgin/pdfview-fixes' into 'master'
 - Vulnerability gate: **0 fixable Critical/High** in Trivy and Grype (SBOM scan) (33 upstream-unfixed).
-- Published multi-arch digest (Docker Hub + GHCR): `dgcosenza/synchronet@sha256:baea9b3fd3eb03fb9f1afb8d8fec93f21b137e7021f462197f2840d4ffe8d5b3` (Cosign OIDC signed + SPDX/CycloneDX SBOM + SLSA L3 provenance).
+- Published multi-arch digest (Docker Hub + GHCR): `dgcosenza/synchronet@sha256:714c8f7f2e0cc57e7b32c8bc810f3f2273db358d47e40a9036bba461568695ea` (Cosign OIDC signed + SPDX/CycloneDX SBOM + SLSA L3 provenance).
 ---
 
 ## [3.22a] — 2026-11-24

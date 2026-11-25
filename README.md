@@ -42,8 +42,8 @@ The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchro
 | Architectures | `linux/amd64` |
 | Uncompressed size (per arch) | `amd64: 136.0 MB` |
 | Last verified build (UTC) | `2026-11-25` |
-| Published multi-arch digest | `dgcosenza/synchronet@sha256:baea9b3fd3eb03fb9f1afb8d8fec93f21b137e7021f462197f2840d4ffe8d5b3` |
-| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:baea9b3fd3eb03fb9f1afb8d8fec93f21b137e7021f462197f2840d4ffe8d5b3` |
+| Published multi-arch digest | `dgcosenza/synchronet@sha256:714c8f7f2e0cc57e7b32c8bc810f3f2273db358d47e40a9036bba461568695ea` |
+| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:714c8f7f2e0cc57e7b32c8bc810f3f2273db358d47e40a9036bba461568695ea` |
 | Supply chain | Cosign OIDC signed + SPDX & CycloneDX SBOM attestations + SLSA Build L3 provenance |
 | Security gate (Trivy + Grype on SBOM) | **0 fixable Critical/High** (33 upstream-unfixed) |
 
