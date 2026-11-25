@@ -12,14 +12,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Mai
 ### Automated Daily Build
 - Verified components: Synchronet BBS `3.22a (71df4cf)`, Deno `2.9.8`, Base OS `Debian 13.8 (trixie-slim)`.
 - Architectures verified: `linux/amd64` (native smoke tests + Dive efficiency gate).
-- Upstream changes:
-  - Synchronet master advanced from c20f737 to 71df4cf.
-  - c837a86: Add the existing Synchronet OpenID Connect provider and setup guide
-  - a735037: We don't need rewrite_lib.js here AFAIK
-  - e339f32: Add OIDC sign-in with WebFinger discovery and dynamic registration
-  - ba6c6a9: Restore ECDSA signing for OpenID Connect ID tokens
+- Upstream status: no new upstream release since previous build; refreshed base OS and dependencies.
 - Vulnerability gate: **0 fixable Critical/High** in Trivy and Grype (SBOM scan) (33 upstream-unfixed).
-- Published multi-arch digest (Docker Hub + GHCR): `dgcosenza/synchronet@sha256:c4fd4c5b3d57f157e7b1de4278c2304ec2c61920b68636c93fd49d74260e9142` (Cosign OIDC signed + SPDX/CycloneDX SBOM + SLSA L3 provenance).
+- Published multi-arch digest (Docker Hub + GHCR): `dgcosenza/synchronet@sha256:b04f8f408009efd655648916f0d56f263cffc40ffa46795fc0fe5bcd104d9343` (Cosign OIDC signed + SPDX/CycloneDX SBOM + SLSA L3 provenance).
 ---
 
 ## [3.22a] — 2026-11-24

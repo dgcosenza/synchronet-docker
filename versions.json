@@ -10,7 +10,7 @@
     "linux/amd64"
   ],
   "sizes_mb": {
-    "amd64": "135.2"
+    "amd64": "135.9"
   },
   "signed": true,
   "slsa_provenance": true,
@@ -23,9 +23,9 @@
   "base_digest": "sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0",
   "debian_version": "13.8",
   "build_date": "2026-11-25",
-  "built_at_utc": "2026-11-25T08:29:49Z",
-  "image_digest": "dgcosenza/synchronet@sha256:c4fd4c5b3d57f157e7b1de4278c2304ec2c61920b68636c93fd49d74260e9142",
-  "ghcr_digest": "ghcr.io/dgcosenza/synchronet@sha256:c4fd4c5b3d57f157e7b1de4278c2304ec2c61920b68636c93fd49d74260e9142",
+  "built_at_utc": "2026-11-25T19:12:51Z",
+  "image_digest": "dgcosenza/synchronet@sha256:b04f8f408009efd655648916f0d56f263cffc40ffa46795fc0fe5bcd104d9343",
+  "ghcr_digest": "ghcr.io/dgcosenza/synchronet@sha256:b04f8f408009efd655648916f0d56f263cffc40ffa46795fc0fe5bcd104d9343",
   "fixable_critical_high": 0,
   "unfixed_cves": [
     "CVE-2025-69720",
