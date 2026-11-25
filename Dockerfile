@@ -102,7 +102,7 @@ RUN set -eux; \
     for exe in sbbs jsexec; do \
       ldd "/sbbs/exec/${exe}" > "/tmp/ldd-${exe}.txt"; \
       cat "/tmp/ldd-${exe}.txt"; \
-      ! grep -q 'not found' "/tmp/ldd-${exe}.txt"; \
+      if grep -q 'not found' "/tmp/ldd-${exe}.txt"; then exit 1; fi; \
     done; \
     rm -f /tmp/ldd-*.txt; \
     install -d -o sbbs -g sbbs /sbbs-data
@@ -113,7 +113,7 @@ USER sbbs:sbbs
 EXPOSE 11 17 18 21 22 23 25 64 70 79 110 1123 119 128 143 443 465 513 563 587 993 995 5500 5501 6667 6697 24553 24554 11235 10088
 
 HEALTHCHECK --interval=120s --timeout=10s --start-period=120s --retries=3 \
-  CMD curl --fail --silent --show-error --output /dev/null --max-time 10 http://127.0.0.1/
+  CMD ["curl", "--fail", "--silent", "--show-error", "--output", "/dev/null", "--max-time", "10", "http://127.0.0.1/"]
 
 VOLUME ["/sbbs-data"]
 CMD ["/sbbs/scripts/sbbs", "syslog"]
