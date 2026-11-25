@@ -1,12 +1,20 @@
 # Synchronet BBS for Debian 13 (trixie)
 
 [![Daily Synchronet image](https://github.com/dgcosenza/synchronet-docker/actions/workflows/daily.yml/badge.svg)](https://github.com/dgcosenza/synchronet-docker/actions/workflows/daily.yml)
+[![Packaging License: MIT](https://img.shields.io/badge/packaging-MIT-blue.svg)](https://github.com/dgcosenza/synchronet-docker/blob/main/LICENSE)
+[![Upstream License: GPL-2.0-or-later](https://img.shields.io/badge/upstream-GPL--2.0--or--later-green.svg)](https://www.synchro.net/copyright.html)
+[![Signed with Cosign](https://img.shields.io/badge/signed-cosign%20OIDC-blueviolet.svg)](#supply-chain-verification)
+[![SLSA Level 3](https://img.shields.io/badge/SLSA-Level%203-brightgreen.svg)](#supply-chain-verification)
+[![Architectures](https://img.shields.io/badge/arch-amd64%20%7C%20arm64-informational.svg)](#supported-architectures)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/dgcosenza/synchronet-docker/badge)](https://scorecard.dev/viewer/?uri=github.com/dgcosenza/synchronet-docker)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgcosenza/synchronet)](https://hub.docker.com/r/dgcosenza/synchronet)
 [![Docker Image Size](https://img.shields.io/docker/image-size/dgcosenza/synchronet/latest)](https://hub.docker.com/r/dgcosenza/synchronet)
+[![Latest Release](https://img.shields.io/github/v/release/dgcosenza/synchronet-docker?label=version)](https://github.com/dgcosenza/synchronet-docker/releases)
 
 A source-built, actively maintained container image for **Synchronet BBS** on **Debian 13 (trixie)**, maintained by **Daniel G. Cosenza from FNX Labs**.
 
 - **Docker Hub:** [`dgcosenza/synchronet`](https://hub.docker.com/r/dgcosenza/synchronet)
+- **GitHub Container Registry (GHCR):** [`ghcr.io/dgcosenza/synchronet`](https://github.com/dgcosenza/synchronet-docker/pkgs/container/synchronet) (identical signed multi-arch digest)
 - **Source Repository:** [`dgcosenza/synchronet-docker`](https://github.com/dgcosenza/synchronet-docker)
 - **Upstream Application:** [`SynchronetBBS/sbbs`](https://github.com/SynchronetBBS/sbbs) (mirror of [`gitlab.synchro.net/main/sbbs`](https://gitlab.synchro.net/main/sbbs))
 - **License:** Packaging MIT; Synchronet GPL/LGPL (see [`THIRD-PARTY-NOTICES.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/THIRD-PARTY-NOTICES.md))
@@ -62,10 +70,12 @@ image: dgcosenza/synchronet:latest@sha256:<digest>
 
 ## Supported Architectures
 
-| Architecture | Status | Notes |
+| Architecture | Status | Verification |
 | --- | --- | --- |
-| `linux/amd64` | **Published & tested** | Built, smoke-tested, scanned with Trivy and Grype, and published to Docker Hub (`dgcosenza/synchronet`). |
+| `linux/amd64` | **Published & natively tested** | Built, smoke-tested, Dive-gated, Syft/Trivy/Grype-scanned, and Cosign-signed on native x86_64 CI runners. |
+| `linux/arm64` | **Published & natively tested** | Built, smoke-tested, Dive-gated, Syft/Trivy/Grype-scanned, and Cosign-signed on native ARM64 CI runners. |
 
+Identical multi-arch OCI manifest digests are published to **Docker Hub** and **GHCR** (`ghcr.io/dgcosenza/*`), accompanied by automated signed [GitHub Releases](https://github.com/dgcosenza/synchronet-docker/releases).
 ---
 
 ## Quick Start
@@ -198,6 +208,39 @@ This image preserves the `/sbbs-data` layout for the Synchronet `3.22a` data lin
 
 ---
 
+## Supply-Chain Verification
+
+Every published digest (multi-arch index and per-architecture manifests) on both Docker Hub and GHCR is keyless-signed with **Sigstore Cosign** (GitHub OIDC), attested with **SPDX** and **CycloneDX** SBOMs, and backed by **SLSA Build L3** provenance (`actions/attest-build-provenance`).
+
+### Verify image signature with Cosign
+
+```bash
+cosign verify \
+  --certificate-identity-regexp="^https://github\.com/dgcosenza/synchronet-docker/\.github/workflows/daily\.yml@refs/heads/main$" \
+  --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+  ghcr.io/dgcosenza/synchronet:latest
+
+# Or against Docker Hub (identical digest):
+cosign verify \
+  --certificate-identity-regexp="^https://github\.com/dgcosenza/synchronet-docker/\.github/workflows/daily\.yml@refs/heads/main$" \
+  --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+  dgcosenza/synchronet:latest
+```
+
+### Verify SPDX / CycloneDX SBOM attestations and SLSA Build Provenance
+
+```bash
+cosign verify-attestation \
+  --type spdxjson \
+  --certificate-identity-regexp="^https://github\.com/dgcosenza/synchronet-docker/\.github/workflows/daily\.yml@refs/heads/main$" \
+  --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+  ghcr.io/dgcosenza/synchronet@sha256:<arch-digest>
+
+gh attestation verify oci://ghcr.io/dgcosenza/synchronet:latest --owner dgcosenza
+```
+
+---
+
 ## Security
 
 - **Vulnerability scan policy:** Every CI build runs **Trivy** (full table artifact, SARIF upload to GitHub Code Scanning, and blocking `--ignore-unfixed` gate) and **Grype** (`--only-fixed`, severity cutoff `high`, blocking gate), plus generates an **SPDX SBOM** artifact via Syft. Publication is blocked on any fixable `CRITICAL` or `HIGH` finding.
@@ -259,10 +302,11 @@ docker buildx build \
 
 ---
 
-## License and Credits
+## License
 
-- **Container packaging, CI, and documentation:** Released under the [MIT License](https://github.com/dgcosenza/synchronet-docker/blob/main/LICENSE) — maintained by **Daniel G. Cosenza from FNX Labs**.
-- **Synchronet BBS:** Copyright Rob Swindell (GNU GPL / LGPL — see [synchro.net/copyright.html](https://www.synchro.net/copyright.html)).
-- **Initialization recipe:** Adapted from the ISC-licensed [`bbs-io/synchronet-docker`](https://github.com/bbs-io/synchronet-docker) project.
-- Full third-party notices: [`THIRD-PARTY-NOTICES.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/THIRD-PARTY-NOTICES.md).
-- Release history: [`CHANGELOG.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/CHANGELOG.md).
+This repository follows a clear packaging-vs-upstream license split:
+
+- **Container packaging, scripts, CI workflows, and documentation (`packaging: MIT`):** Licensed under the [MIT License](https://github.com/dgcosenza/synchronet-docker/blob/main/LICENSE) — copyright **Daniel G. Cosenza from FNX Labs**.
+- **Bundled upstream software — Synchronet BBS (`SynchronetBBS/sbbs`, mirror of `gitlab.synchro.net/main/sbbs`) (`upstream: GPL-2.0-or-later`):** Copyright Rob Swindell — licensed under the [GNU General Public License (GPL-2.0-or-later)](https://www.synchro.net/copyright.html), with `XPDEV`, `SMBLIB`, `CIOLIB`, `UIFC`, and `XSDK` under the LGPL. Initialization scripts are adapted from the ISC-licensed [`bbs-io/synchronet-docker`](https://github.com/bbs-io/synchronet-docker).
+
+Full third-party notices are maintained in [`THIRD-PARTY-NOTICES.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/THIRD-PARTY-NOTICES.md). Release history is maintained in [`CHANGELOG.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/CHANGELOG.md).
