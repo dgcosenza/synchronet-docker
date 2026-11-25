@@ -1,0 +1,36 @@
+# Example loopback-bound Docker Compose configuration for dgcosenza/synchronet
+# Pin by @sha256 digest in production and expose only the protocols you enable.
+
+services:
+  bbs:
+    image: dgcosenza/synchronet:latest
+    container_name: synchronet
+    command: ["/sbbs/scripts/sbbs", "syslog"]
+    restart: unless-stopped
+    # Note: do NOT set security_opt: no-new-privileges:true. Synchronet uses
+    # cap_net_bind_service and sudo during initialization to bind privileged ports.
+    environment:
+      TZ: Etc/UTC
+    volumes:
+      # Must be writable by uid 1000 / gid 1000 (`sbbs`)
+      - ./data:/sbbs-data
+      # Optional: mount host syslog socket for fail2ban log ingestion
+      # - /dev/log:/dev/log
+    ports:
+      - "127.0.0.1:2323:22"
+      - "127.0.0.1:2324:23"
+      - "127.0.0.1:8080:80"
+      - "127.0.0.1:11230:1123"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--output", "/dev/null", "--max-time", "10", "http://127.0.0.1/"]
+      interval: 120s
+      timeout: 10s
+      start_period: 120s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+        reservations:
+          memory: 128M

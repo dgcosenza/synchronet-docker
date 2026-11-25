@@ -2,34 +2,78 @@ name: Daily Synchronet image
 
 on:
   schedule:
+    # Daily rebuild at 04:45 UTC to pick up Debian 13 (trixie) security
+    # updates, Synchronet master commits, and new Deno releases.
     - cron: "45 4 * * *"
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
+    inputs:
+      synchronet_commit:
+        description: "Override Synchronet master git commit SHA (leave empty for latest upstream master)"
+        required: false
+        default: ""
+      deno_version:
+        description: "Override Deno version without leading v (leave empty for latest official release)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
 
 concurrency:
-  group: synchronet-image
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  IMAGE_NAME: dgcosenza/synchronet
+
 jobs:
+  public-check:
+    name: Public content check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Verify public-content rules and maintainer attribution
+        env:
+          PR_TEXT: ${{ github.event.pull_request.title }} ${{ github.event.pull_request.body }}
+        run: .github/scripts/public-check.sh
+
   build-scan-publish:
+    name: Build, smoke test, scan, and publish
+    needs: public-check
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    permissions:
+      contents: read
+      security-events: write
+    outputs:
+      published_digest: ${{ steps.publish.outputs.digest }}
     steps:
       - name: Check out image sources
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7
 
-      - name: Resolve current upstream versions
+      - name: Check upstream releases and resolve versions
         id: upstream
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          commit="$(git ls-remote https://github.com/SynchronetBBS/sbbs.git refs/heads/master | awk '{print $1}')"
+
+          commit="${{ inputs.synchronet_commit }}"
+          if [ -z "$commit" ]; then
+            commit="$(git ls-remote https://github.com/SynchronetBBS/sbbs.git refs/heads/master | awk '{print $1}')"
+          fi
           test "${#commit}" -eq 40
+
           version="$(python3 - "$commit" <<'PY'
           import sys
           import urllib.request
@@ -41,106 +85,434 @@ jobs:
           print(major_minor + revision)
           PY
           )"
-          deno_tag="$(curl -fsSL https://api.github.com/repos/denoland/deno/releases/latest | jq -r .tag_name)"
-          deno_version="$(printf '%s' "$deno_tag" | sed 's/^v//')"
-          deno_sha256="$(curl -fsSL "https://github.com/denoland/deno/releases/download/v$deno_version/deno-x86_64-unknown-linux-gnu.zip.sha256sum" | awk '{print $1}')"
+
+          deno_version="${{ inputs.deno_version }}"
+          if [ -z "$deno_version" ]; then
+            deno_tag="$(curl -fsSL \
+              -H 'Accept: application/vnd.github+json' \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              https://api.github.com/repos/denoland/deno/releases/latest | jq -r .tag_name)"
+            deno_version="$(printf '%s' "$deno_tag" | sed 's/^v//')"
+          fi
+          deno_sha256="$(curl -fsSL "https://github.com/denoland/deno/releases/download/v${deno_version}/deno-x86_64-unknown-linux-gnu.zip.sha256sum" | awk '{print $1}')"
           test "${#deno_sha256}" -eq 64
+
+          base_digest="$(curl -fsSL "https://hub.docker.com/v2/repositories/library/debian/tags/trixie-slim" \
+            | jq -r '.digest // (.images[]? | select(.architecture=="amd64") | .digest) // empty' | head -n1)"
+
           short_sha="$(printf '%s' "$commit" | cut -c1-7)"
+          build_date="$(date -u +%Y%m%d)"
+          build_date_iso="$(date -u +%Y-%m-%d)"
+          created="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          prev_commit="$(jq -r '.upstream_commit // empty' versions.json 2>/dev/null || true)"
+          prev_deno="$(jq -r '.components.Deno // empty' versions.json 2>/dev/null || true)"
+          prev_base="$(jq -r '.base_digest // empty' versions.json 2>/dev/null || true)"
+
           {
-            echo "commit=$commit"
-            echo "version=$version"
-            echo "short_sha=$short_sha"
-            echo "image_tag=$version-$short_sha"
-            echo "deno_version=$deno_version"
-            echo "deno_sha256=$deno_sha256"
+            echo "# Upstream Changes (${build_date_iso})"
+            if [ -n "$prev_commit" ] && [ "$prev_commit" != "$commit" ]; then
+              echo "- Synchronet master advanced from ${prev_commit:0:7} to ${short_sha}."
+              curl -fsSL \
+                -H 'Accept: application/vnd.github+json' \
+                -H "Authorization: Bearer $GH_TOKEN" \
+                -H 'X-GitHub-Api-Version: 2022-11-28' \
+                "https://api.github.com/repos/SynchronetBBS/sbbs/compare/${prev_commit}...${commit}" 2>/dev/null \
+                | jq -r '.commits[-5:][]? | "- " + (.sha[0:7]) + ": " + ((.commit.message | split("\n")[0]))' || true
+            fi
+            if [ -n "$prev_deno" ] && [ "$prev_deno" != "$deno_version" ]; then
+              echo "- Deno updated from ${prev_deno} to ${deno_version}."
+            fi
+            if [ -n "$base_digest" ] && [ -n "$prev_base" ] && [ "$base_digest" != "$prev_base" ]; then
+              echo "- Refreshed debian:trixie-slim base image digest."
+            fi
+          } > upstream-changes.md
+
+          {
+            echo "commit=${commit}"
+            echo "version=${version}"
+            echo "short_sha=${short_sha}"
+            echo "image_tag=${version}-${short_sha}"
+            echo "date_tag=${version}-${build_date}"
+            echo "commit_date_tag=${version}-${short_sha}-${build_date}"
+            echo "deno_version=${deno_version}"
+            echo "deno_sha256=${deno_sha256}"
+            echo "base_digest=${base_digest}"
+            echo "build_date=${build_date}"
+            echo "build_date_iso=${build_date_iso}"
+            echo "created=${created}"
           } >> "$GITHUB_OUTPUT"
 
+          echo "Resolved Synchronet ${version} (${commit}), Deno ${deno_version}, base ${base_digest}."
+
+      - name: Upload upstream changes artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: upstream-changes
+          path: upstream-changes.md
+          retention-days: 90
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
       - name: Build linux/amd64 image
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          no-cache: ${{ github.event_name == 'schedule' }}
+          tags: |
+            ${{ env.IMAGE_NAME }}:ci-candidate
+          build-args: |
+            SYNCHRONET_COMMIT=${{ steps.upstream.outputs.commit }}
+            SYNCHRONET_VERSION=${{ steps.upstream.outputs.version }}
+            DENO_VERSION=${{ steps.upstream.outputs.deno_version }}
+            DENO_SHA256=${{ steps.upstream.outputs.deno_sha256 }}
+            BUILD_DATE=${{ steps.upstream.outputs.created }}
+            IMAGE_REVISION=${{ github.sha }}
+            IMAGE_SOURCE=https://github.com/${{ github.repository }}
+
+      - name: Inspect resolved OS version and emit provenance metadata
+        id: inspect_image
         shell: bash
         run: |
           set -euo pipefail
-          docker buildx build --platform linux/amd64 --load \
-            --build-arg SYNCHRONET_COMMIT="${{ steps.upstream.outputs.commit }}" \
-            --build-arg SYNCHRONET_VERSION="${{ steps.upstream.outputs.version }}" \
-            --build-arg DENO_VERSION="${{ steps.upstream.outputs.deno_version }}" \
-            --build-arg DENO_SHA256="${{ steps.upstream.outputs.deno_sha256 }}" \
-            --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --tag synchronet-ci:daily .
+          DEBIAN_VERSION="$(docker run --rm --entrypoint cat "${IMAGE_NAME}:ci-candidate" /etc/debian_version | tr -d '\r\n')"
+          echo "debian_version=${DEBIAN_VERSION}" >> "$GITHUB_OUTPUT"
+          jq -n \
+            --arg image "${IMAGE_NAME}" \
+            --arg upstream_version "${{ steps.upstream.outputs.version }}" \
+            --arg upstream_commit "${{ steps.upstream.outputs.commit }}" \
+            --arg deno_version "${{ steps.upstream.outputs.deno_version }}" \
+            --arg debian_version "${DEBIAN_VERSION}" \
+            --arg base_digest "${{ steps.upstream.outputs.base_digest }}" \
+            --arg created "${{ steps.upstream.outputs.created }}" \
+            --arg revision "${GITHUB_SHA}" \
+            --arg run_url "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            '{image: $image, upstream_version: $upstream_version, upstream_commit: $upstream_commit, deno_version: $deno_version, debian_version: $debian_version, base_digest: $base_digest, created: $created, git_revision: $revision, run_url: $run_url}' \
+            > provenance.json
+          echo "Detected Debian point release: ${DEBIAN_VERSION}"
 
-      - name: Scan image for fixable critical and high vulnerabilities
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - name: Smoke-test container startup, webv4 HTTP response, and non-root execution
+        shell: bash
+        run: ./tests/smoke.sh "${IMAGE_NAME}:ci-candidate"
+
+      - name: Scan image with Trivy — full table report (informational)
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: synchronet-ci:daily
-          version: v0.76.2
-          format: table
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: "1"
+          image-ref: '${{ env.IMAGE_NAME }}:ci-candidate'
+          format: 'table'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+          output: 'trivy-report.txt'
 
-      - name: Check for Docker Hub secrets
+      - name: Scan image with Trivy — full JSON report for CVE diffing
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: '${{ env.IMAGE_NAME }}:ci-candidate'
+          format: 'json'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+          output: 'trivy-report.json'
+
+      - name: Compute CVE diff against previous build
+        shell: bash
+        run: python3 .github/scripts/cve-diff.py versions.json trivy-report.json cve-diff.json
+
+      - name: Scan image with Trivy — SARIF for code scanning
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: '${{ env.IMAGE_NAME }}:ci-candidate'
+          format: 'sarif'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          output: 'trivy-results.sarif'
+          exit-code: '0'
+
+      - name: Upload Trivy SARIF to code scanning
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: trivy-synchronet
+
+      - name: Upload Trivy and provenance artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: trivy-report
+          path: |
+            trivy-report.txt
+            trivy-report.json
+            cve-diff.json
+            provenance.json
+          retention-days: 90
+          if-no-files-found: ignore
+
+      - name: Scan image with Trivy — HARD GATE (fail on any fixable CRITICAL or HIGH)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: '${{ env.IMAGE_NAME }}:ci-candidate'
+          format: 'table'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Scan image with Grype — HARD GATE (fail on any fixable CRITICAL or HIGH)
+        id: grype
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: anchore/scan-action@v7
+        with:
+          image: '${{ env.IMAGE_NAME }}:ci-candidate'
+          only-fixed: true
+          severity-cutoff: high
+          fail-build: true
+          output-format: table
+          output-file: grype-report.txt
+
+      - name: Upload Grype report artifact
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: grype-report
+          path: grype-report.txt
+          retention-days: 90
+          if-no-files-found: ignore
+
+      - name: Generate SBOM with Syft
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: anchore/sbom-action@v0
+        with:
+          image: '${{ env.IMAGE_NAME }}:ci-candidate'
+          format: 'spdx-json'
+          artifact-name: 'sbom.spdx.json'
+          upload-artifact-retention: 90
+
+      - name: Check Docker Hub publish credentials
         id: hub
         shell: bash
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ]; then
+          if [ "${{ github.event_name }}" != "pull_request" ] && [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "Docker Hub push skipped; configure the DOCKERHUB_USERNAME and DOCKERHUB_TOKEN Actions secrets to enable publishing." >> "$GITHUB_STEP_SUMMARY"
+            echo "Docker Hub push skipped (pull request event or DOCKERHUB_USERNAME/DOCKERHUB_TOKEN not configured)." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Log in to Docker Hub
-        if: ${{ steps.hub.outputs.enabled == 'true' }}
-        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        if: steps.hub.outputs.enabled == 'true'
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Publish moving and immutable tags
-        if: ${{ steps.hub.outputs.enabled == 'true' }}
+        id: publish
+        if: steps.hub.outputs.enabled == 'true'
         shell: bash
         env:
+          VERSION: ${{ steps.upstream.outputs.version }}
           IMAGE_TAG: ${{ steps.upstream.outputs.image_tag }}
+          DATE_TAG: ${{ steps.upstream.outputs.date_tag }}
+          COMMIT_DATE_TAG: ${{ steps.upstream.outputs.commit_date_tag }}
         run: |
           set -euo pipefail
-          docker tag synchronet-ci:daily dgcosenza/synchronet:nightly
-          docker tag synchronet-ci:daily dgcosenza/synchronet:latest
-          docker push dgcosenza/synchronet:nightly
-          docker push dgcosenza/synchronet:latest
-          if docker manifest inspect "dgcosenza/synchronet:$IMAGE_TAG" >/dev/null 2>&1; then
-            echo "Immutable tag already exists; leaving it unchanged: $IMAGE_TAG" >> "$GITHUB_STEP_SUMMARY"
+          SHA_TAG="sha-${GITHUB_SHA::7}"
+
+          for tag in nightly latest "$VERSION" "$DATE_TAG" "$COMMIT_DATE_TAG" "$SHA_TAG"; do
+            docker tag "${IMAGE_NAME}:ci-candidate" "${IMAGE_NAME}:${tag}"
+            docker push "${IMAGE_NAME}:${tag}"
+          done
+
+          if docker manifest inspect "${IMAGE_NAME}:${IMAGE_TAG}" >/dev/null 2>&1; then
+            echo "Immutable commit tag already exists; leaving it unchanged: ${IMAGE_TAG}" >> "$GITHUB_STEP_SUMMARY"
           else
-            docker tag synchronet-ci:daily "dgcosenza/synchronet:$IMAGE_TAG"
-            docker push "dgcosenza/synchronet:$IMAGE_TAG"
+            docker tag "${IMAGE_NAME}:ci-candidate" "${IMAGE_NAME}:${IMAGE_TAG}"
+            docker push "${IMAGE_NAME}:${IMAGE_TAG}"
           fi
+
+          DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE_NAME}:latest")"
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
           {
-            echo "Built Synchronet $IMAGE_TAG."
-            echo "Debian base: debian:trixie-slim, upgraded during this run."
-            echo "Trivy scan passed with no fixable critical or high findings."
+            echo "Built Synchronet ${IMAGE_TAG} (${COMMIT_DATE_TAG})."
+            echo "Digest: ${DIGEST}"
+            echo "Debian base: debian:trixie-slim (${{ steps.inspect_image.outputs.debian_version }}), upgraded during this run."
+            echo "Trivy and Grype scans passed with 0 fixable Critical/High findings."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Read Docker Hub short description
-        if: ${{ steps.hub.outputs.enabled == 'true' }}
-        id: short_desc
+      - name: Build updated versions metadata
+        shell: bash
+        env:
+          PUBLISHED_DIGEST: ${{ steps.publish.outputs.digest }}
+        run: |
+          set -euo pipefail
+          jq -n \
+            --arg image "${IMAGE_NAME}" \
+            --arg upstream_name "SynchronetBBS/sbbs" \
+            --arg upstream_version "${{ steps.upstream.outputs.version }}" \
+            --arg upstream_commit "${{ steps.upstream.outputs.commit }}" \
+            --arg short_sha "${{ steps.upstream.outputs.short_sha }}" \
+            --arg deno_version "${{ steps.upstream.outputs.deno_version }}" \
+            --arg debian_version "${{ steps.inspect_image.outputs.debian_version }}" \
+            --arg base_digest "${{ steps.upstream.outputs.base_digest }}" \
+            --arg build_date "${{ steps.upstream.outputs.build_date_iso }}" \
+            --arg built_at_utc "${{ steps.upstream.outputs.created }}" \
+            --arg image_digest "${PUBLISHED_DIGEST}" \
+            --slurpfile cve cve-diff.json \
+            '{
+              image: $image,
+              upstream_name: $upstream_name,
+              upstream_version: $upstream_version,
+              upstream_commit: $upstream_commit,
+              changelog_version: ($upstream_version + "-" + $short_sha),
+              components: {
+                "Synchronet BBS": ($upstream_version + " (" + $short_sha + ")"),
+                "Deno": $deno_version,
+                "Base OS": ("Debian " + $debian_version + " (trixie-slim)")
+              },
+              base_image: "debian:trixie-slim",
+              base_digest: $base_digest,
+              debian_version: $debian_version,
+              build_date: $build_date,
+              built_at_utc: $built_at_utc,
+              image_digest: $image_digest,
+              fixable_critical_high: ($cve[0].fixable_critical_high // 0),
+              unfixed_cves: ($cve[0].unfixed_cves // [])
+            }' > versions-new.json
+
+      - name: Upload release metadata artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-metadata
+          path: |
+            versions-new.json
+            upstream-changes.md
+            cve-diff.json
+          retention-days: 90
+
+  update-docs:
+    name: Update docs and sync Docker Hub overview
+    needs: build-scan-publish
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Download release metadata
+        uses: actions/download-artifact@v8
+        with:
+          name: release-metadata
+          path: .ci-meta
+
+      - name: Update versions.json, README.md, and CHANGELOG.md
         shell: bash
         run: |
           set -euo pipefail
-          DESC="$(tr -d '\r\n' < DOCKERHUB_SHORT_DESCRIPTION.txt)"
-          if [ "${#DESC}" -gt 100 ]; then
-            echo "ERROR: Docker Hub short description exceeds 100 characters (${#DESC})." >&2
-            exit 1
+          python3 .github/scripts/update-docs.py \
+            .ci-meta/versions-new.json \
+            .ci-meta/upstream-changes.md \
+            .ci-meta/cve-diff.json
+          rm -rf .ci-meta
+          .github/scripts/public-check.sh
+
+      - name: Commit and push updated documentation (if changed)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain versions.json README.md CHANGELOG.md)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add versions.json README.md CHANGELOG.md
+            git commit -m "chore(docs): update daily build metadata and changelog [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          else
+            echo "No documentation or version metadata changes to commit."
           fi
-          echo "text=${DESC}" >> "$GITHUB_OUTPUT"
+
+      - name: Check Docker Hub sync credentials
+        id: hub_sync
+        shell: bash
+        env:
+          DH_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DH_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$DH_USER" ] && [ -n "$DH_TOKEN" ]; then
+            DESC="$(tr -d '\r\n' < DOCKERHUB_SHORT_DESCRIPTION.txt)"
+            if [ "${#DESC}" -gt 100 ]; then
+              echo "ERROR: Docker Hub short description exceeds 100 characters (${#DESC})." >&2
+              exit 1
+            fi
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "short_desc=${DESC}" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Sync Docker Hub repository overview (short and full description)
-        if: ${{ steps.hub.outputs.enabled == 'true' }}
+        if: steps.hub_sync.outputs.enabled == 'true'
         uses: peter-evans/dockerhub-description@v5
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: dgcosenza/synchronet
-          short-description: ${{ steps.short_desc.outputs.text }}
+          repository: ${{ env.IMAGE_NAME }}
+          short-description: ${{ steps.hub_sync.outputs.short_desc }}
           readme-filepath: ./README.md
+
+  alert-on-status:
+    name: Manage CI failure alert issue
+    needs: [public-check, build-scan-publish, update-docs]
+    if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open/update or auto-close ci-failure issue
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RES_PUBLIC: ${{ needs.public-check.result }}
+          RES_BUILD: ${{ needs.build-scan-publish.result }}
+          RES_DOCS: ${{ needs.update-docs.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          FAILED=()
+          [ "$RES_PUBLIC" != "success" ] && FAILED+=("public-check (${RES_PUBLIC})")
+          [ "$RES_BUILD" != "success" ] && FAILED+=("build-scan-publish (${RES_BUILD})")
+          [ "$RES_DOCS" != "success" ] && FAILED+=("update-docs (${RES_DOCS})")
+
+          OPEN_ISSUE="$(gh issue list -R "$GITHUB_REPOSITORY" --label ci-failure --state open --json number --jq '.[0].number // empty')"
+
+          if [ "${#FAILED[@]}" -gt 0 ]; then
+            gh label create ci-failure --repo "$GITHUB_REPOSITORY" --color B60205 --description "Automated daily CI failure alert" --force >/dev/null 2>&1 || true
+            FAIL_LIST="$(IFS=', '; echo "${FAILED[*]}")"
+            TITLE="Daily build failed: ${FAIL_LIST}"
+            BODY="$(printf 'Automated daily pipeline failed on `%s` (%s UTC).\n\n- **Failing job(s):** %s\n- **Event:** `%s`\n- **Workflow run:** %s\n' \
+              "$GITHUB_REF_NAME" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$FAIL_LIST" "${{ github.event_name }}" "$RUN_URL")"
+            if [ -n "$OPEN_ISSUE" ]; then
+              gh issue edit "$OPEN_ISSUE" -R "$GITHUB_REPOSITORY" --title "$TITLE" --body "$BODY"
+              gh issue comment "$OPEN_ISSUE" -R "$GITHUB_REPOSITORY" --body "Latest failing run: ${RUN_URL} (${FAIL_LIST})."
+            else
+              gh issue create -R "$GITHUB_REPOSITORY" --label ci-failure --title "$TITLE" --body "$BODY"
+            fi
+          elif [ -n "$OPEN_ISSUE" ]; then
+            gh issue comment "$OPEN_ISSUE" -R "$GITHUB_REPOSITORY" --body "Daily pipeline recovered and passed on ${RUN_URL}. Closing automatically."
+            gh issue close "$OPEN_ISSUE" -R "$GITHUB_REPOSITORY"
+          else
+            echo "All jobs succeeded and no open ci-failure issue exists."
+          fi

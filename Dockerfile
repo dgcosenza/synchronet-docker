@@ -46,7 +46,7 @@ RUN groupadd --gid 1000 sbbs \
     && install -d -o sbbs -g sbbs /sbbs-data
 
 FROM runtime-base AS build
-ARG SYNCHRONET_COMMIT=933e8499ac81251da7929f16cdcff3ca71239cdb
+ARG SYNCHRONET_COMMIT=c20f7377662025b629978cfeade8563a6a7ac97e
 ARG SYNCHRONET_VERSION=3.22a
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -85,9 +85,11 @@ RUN chmod 0755 /sbbs/scripts/sbbs /sbbs/scripts/sbbs-init /sbbs/scripts/post-bui
 
 FROM runtime-base AS runtime
 ARG BUILD_DATE=unknown
-ARG SYNCHRONET_COMMIT=933e8499ac81251da7929f16cdcff3ca71239cdb
+ARG SYNCHRONET_COMMIT=c20f7377662025b629978cfeade8563a6a7ac97e
 ARG SYNCHRONET_VERSION=3.22a
 ARG DENO_VERSION=2.9.8
+ARG IMAGE_REVISION=""
+ARG IMAGE_SOURCE="https://github.com/dgcosenza/synchronet-docker"
 
 COPY --from=build --chown=0:0 /sbbs /sbbs
 COPY --from=build --chown=0:0 /usr/local/bin/deno /usr/local/bin/deno
@@ -118,16 +120,21 @@ HEALTHCHECK --interval=120s --timeout=10s --start-period=120s --retries=3 \
 VOLUME ["/sbbs-data"]
 CMD ["/sbbs/scripts/sbbs", "syslog"]
 
-LABEL org.opencontainers.image.source="https://github.com/dgcosenza/synchronet-docker" \
-      org.opencontainers.image.revision="$SYNCHRONET_COMMIT" \
-      org.opencontainers.image.created="$BUILD_DATE" \
+LABEL org.opencontainers.image.source="${IMAGE_SOURCE}" \
+      org.opencontainers.image.url="https://hub.docker.com/r/dgcosenza/synchronet" \
+      org.opencontainers.image.documentation="${IMAGE_SOURCE}#readme" \
+      org.opencontainers.image.revision="${IMAGE_REVISION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.title="Synchronet BBS on Debian 13" \
-      org.opencontainers.image.description="Source-built Synchronet BBS for Debian 13 Trixie, pinned to upstream commit $SYNCHRONET_COMMIT." \
-      org.opencontainers.image.version="$SYNCHRONET_VERSION" \
+      org.opencontainers.image.description="Source-built Synchronet BBS for Debian 13 (trixie), pinned to upstream commit ${SYNCHRONET_COMMIT}, maintained by Daniel G. Cosenza from FNX Labs." \
+      org.opencontainers.image.version="${SYNCHRONET_VERSION}" \
       org.opencontainers.image.licenses="NOASSERTION" \
       org.opencontainers.image.authors="Daniel G. Cosenza from FNX Labs" \
       org.opencontainers.image.vendor="Daniel G. Cosenza from FNX Labs" \
       org.opencontainers.image.base.name="debian:trixie-slim" \
-      org.synchronet.version="$SYNCHRONET_VERSION" \
-      org.synchronet.commit="$SYNCHRONET_COMMIT" \
-      org.deno.version="$DENO_VERSION"
+      io.github.dgcosenza.synchronet.upstream_version="${SYNCHRONET_VERSION}" \
+      io.github.dgcosenza.synchronet.upstream_commit="${SYNCHRONET_COMMIT}" \
+      io.github.dgcosenza.synchronet.deno_version="${DENO_VERSION}" \
+      org.synchronet.version="${SYNCHRONET_VERSION}" \
+      org.synchronet.commit="${SYNCHRONET_COMMIT}" \
+      org.deno.version="${DENO_VERSION}"

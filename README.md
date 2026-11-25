@@ -1,243 +1,267 @@
-# Synchronet BBS for Debian 13
+# Synchronet BBS for Debian 13 (trixie)
+
+[![Daily Synchronet image](https://github.com/dgcosenza/synchronet-docker/actions/workflows/daily.yml/badge.svg)](https://github.com/dgcosenza/synchronet-docker/actions/workflows/daily.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/dgcosenza/synchronet)](https://hub.docker.com/r/dgcosenza/synchronet)
+[![Docker Image Size](https://img.shields.io/docker/image-size/dgcosenza/synchronet/latest)](https://hub.docker.com/r/dgcosenza/synchronet)
+
+A source-built, actively maintained container image for **Synchronet BBS** on **Debian 13 (trixie)**, maintained by **Daniel G. Cosenza from FNX Labs**.
+
+- **Docker Hub:** [`dgcosenza/synchronet`](https://hub.docker.com/r/dgcosenza/synchronet)
+- **Source Repository:** [`dgcosenza/synchronet-docker`](https://github.com/dgcosenza/synchronet-docker)
+- **Upstream Application:** [`SynchronetBBS/sbbs`](https://github.com/SynchronetBBS/sbbs) (mirror of [`gitlab.synchro.net/main/sbbs`](https://gitlab.synchro.net/main/sbbs))
+- **License:** Packaging MIT; Synchronet GPL/LGPL (see [`THIRD-PARTY-NOTICES.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/THIRD-PARTY-NOTICES.md))
+
+---
 
 ## Overview
 
-This repository builds and maintains a source-built Synchronet BBS container on Debian 13 Trixie. The image is maintained by Daniel G. Cosenza from FNX Labs. The image tracks current Synchronet upstream master, builds the commit recorded in its OCI labels, upgrades Debian packages during each build, and uses the current checksum-verified Deno release.
+This repository builds and maintains a source-built **Synchronet BBS** container on **Debian 13 (trixie)** (`debian:trixie-slim`, latest Debian 13 point release — 13.8 as of 2026-11-24). Every CI build resolves the current upstream Synchronet `master` commit, validates the version header (`sbbsdefs.h`), upgrades all Debian packages (`apt-get update && apt-get -y upgrade`), installs the latest SHA-256-verified **Deno** release, runs a container smoke test, and gates publication on **0 fixable Critical/High vulnerabilities** in both **Trivy** and **Grype**.
 
-Synchronet is developed at [gitlab.synchro.net/main/sbbs](https://gitlab.synchro.net/main/sbbs). The build fetches the matching commit from the maintained [SynchronetBBS GitHub mirror](https://github.com/SynchronetBBS/sbbs) because unauthenticated GitLab smart-HTTP refs are not consistently available to container builders. The packaging modernizes the Debian 11 based bbsio/synchronet recipe; it is independently maintained and is not an official Synchronet or BBS-IO image.
+Synchronet is developed at [gitlab.synchro.net/main/sbbs](https://gitlab.synchro.net/main/sbbs). The build fetches the exact commit from the maintained [SynchronetBBS GitHub mirror](https://github.com/SynchronetBBS/sbbs) because unauthenticated GitLab smart-HTTP refs are not consistently available to automated container builders. The packaging modernizes the Debian 11 `bbsio/synchronet` recipe; it is independently maintained and is not an official Synchronet or BBS-IO image.
 
-The persistent data mount follows the /sbbs-data layout used by bbsio/synchronet. This release is built from Synchronet 3.22a source and is intended to read 3.22a data. Test upgrades on a copy first.
+The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchronet`. Test upgrades on a cold copy of your data directory first.
 
-## Tags and versioning
+---
 
-- dgcosenza/synchronet:3.22a-933e849 identifies the current Synchronet 3.22a build from source commit 933e8499ac81251da7929f16cdcff3ca71239cdb. Version-and-commit tags are immutable after publication.
-- dgcosenza/synchronet:3.22a-6bd53d6 identifies the previous 3.22a build from commit 6bd53d6b60c4edaddead52a36be2c5479f1aeafb. It remains an immutable rollback/version tag and is not the moving current build.
-- dgcosenza/synchronet:nightly moves to the latest upstream master commit that builds, passes the image scan, and is published by CI.
-- dgcosenza/synchronet:latest aliases the same current Debian 13 and current Synchronet build as nightly. It is never a frozen historical release.
-- Pin production deployments by registry digest after review. A moving tag is a discovery channel, not a deployment pin.
+## Current Versions
 
-Each build uses the latest Debian 13 point release (debian:trixie-slim; 13.8 as of 2026-11-24) and upgrades all available packages at build time. The version-and-commit tag records the Synchronet source revision; the complete image digest records the exact image, including its Debian packages.
+<!-- versions:start -->
+| Component | Resolved Version |
+| --- | --- |
+| Synchronet BBS | `3.22a (c20f737)` |
+| Deno | `2.9.8` |
+| Base OS | `Debian 13.8 (trixie-slim)` |
+| Last verified build (UTC) | `2026-11-24` |
+| Security gate (Trivy + Grype) | **0 fixable Critical/High** (0 upstream-unfixed) |
+<!-- versions:end -->
 
-## Supported architecture
+---
 
-The published image targets linux/amd64. Other architectures are not built or tested by this repository.
+## Supported Tags
 
-## Quick start
+| Tag | Policy | Description |
+| --- | --- | --- |
+| `<version>-<commit>-<YYYYMMDD>` (e.g. `3.22a-c20f737-20261124`) | **Immutable** | Point-in-time build pinning the Synchronet version, upstream commit, and UTC build date. |
+| `<version>-<YYYYMMDD>` (e.g. `3.22a-20261124`) | **Immutable** | Date-stamped daily rebuild on the resolved Debian 13 base. |
+| `<version>-<commit>` (e.g. `3.22a-c20f737`) | **Immutable** | First verified build for a given upstream Synchronet source commit. |
+| `sha-<short>` | **Immutable** | Packaging repository commit tag. |
+| `<version>` (e.g. `3.22a`) | Moving | Latest verified build in the current Synchronet release line. |
+| `nightly` | Moving | Latest verified build tracking Synchronet `master`. |
+| `latest` | Moving | Alias of `nightly` (never a frozen historical release). |
 
-Create a data directory and make it writable by the container service account (UID/GID 1000):
+Each published image records the exact Synchronet version, upstream commit SHA, and Deno version in its OCI labels (`org.opencontainers.image.*` and `io.github.dgcosenza.synchronet.*`). See [`CHANGELOG.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/CHANGELOG.md) for recent default pins and release notes.
 
-    mkdir -p "$HOME/synchronet/data"
-    sudo chown -R 1000:1000 "$HOME/synchronet/data"
-    cd "$HOME/synchronet"
+**Production pinning:** Pin deployments by **registry digest** rather than pulling an unpinned moving tag:
 
-### Docker run
+```yaml
+image: dgcosenza/synchronet:latest@sha256:<digest>
+```
 
-This example keeps services on loopback and maps SSH, Telnet, and webv4 to non-privileged host ports. Add other mappings only after reviewing protocol and firewall exposure.
+---
 
-    docker run -d --name synchronet --restart unless-stopped --env TZ=Etc/UTC --publish 127.0.0.1:2323:22 --publish 127.0.0.1:2324:23 --publish 127.0.0.1:8080:80 --volume "$PWD/data:/sbbs-data" dgcosenza/synchronet:nightly
+## Supported Architectures
 
-Open the web interface at http://127.0.0.1:8080/. Connect to SSH on port 2323 or Telnet on port 2324. Synchronet initializes missing data directories on the first run.
+| Architecture | Status | Notes |
+| --- | --- | --- |
+| `linux/amd64` | **Published & tested** | Built, smoke-tested, scanned with Trivy and Grype, and published to Docker Hub (`dgcosenza/synchronet`). |
+
+---
+
+## Quick Start
+
+Create a persistent data directory owned by the container service account (**UID/GID `1000:1000`**):
+
+```bash
+mkdir -p "$HOME/synchronet/data"
+sudo chown -R 1000:1000 "$HOME/synchronet/data"
+cd "$HOME/synchronet"
+```
+
+### `docker run` (loopback-only example)
+
+This example keeps services on loopback and maps SSH, Telnet, and webv4 to non-privileged host ports. Add other mappings only after reviewing protocol and firewall exposure:
+
+```bash
+docker run -d \
+  --name synchronet \
+  --restart unless-stopped \
+  -e TZ=Etc/UTC \
+  -p 127.0.0.1:2323:22 \
+  -p 127.0.0.1:2324:23 \
+  -p 127.0.0.1:8080:80 \
+  -v "$PWD/data:/sbbs-data" \
+  dgcosenza/synchronet:latest
+```
+
+Open the web interface at `http://127.0.0.1:8080/`, or connect via SSH on port `2323` or Telnet on port `2324`. Synchronet initializes missing data directories on first startup.
 
 ### Docker Compose
 
-Save this complete example as compose.yaml in the directory containing data/:
+See [`docker-compose.example.yml`](https://github.com/dgcosenza/synchronet-docker/blob/main/docker-compose.example.yml):
 
-    services:
-      bbs:
-        image: dgcosenza/synchronet:nightly
-        container_name: synchronet
-        command: ["/sbbs/scripts/sbbs", "syslog"]
-        restart: unless-stopped
-        environment:
-          TZ: Etc/UTC
-        volumes:
-          - ./data:/sbbs-data
-        ports:
-          - "127.0.0.1:2323:22"
-          - "127.0.0.1:2324:23"
-          - "127.0.0.1:8080:80"
-          - "127.0.0.1:11230:1123"
-        healthcheck:
-          test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--output", "/dev/null", "--max-time", "10", "http://127.0.0.1/"]
-          interval: 120s
-          timeout: 10s
-          start_period: 120s
-          retries: 3
+```yaml
+services:
+  bbs:
+    image: dgcosenza/synchronet:latest
+    container_name: synchronet
+    command: ["/sbbs/scripts/sbbs", "syslog"]
+    restart: unless-stopped
+    environment:
+      TZ: Etc/UTC
+    volumes:
+      - ./data:/sbbs-data
+    ports:
+      - "127.0.0.1:2323:22"
+      - "127.0.0.1:2324:23"
+      - "127.0.0.1:8080:80"
+      - "127.0.0.1:11230:1123"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--output", "/dev/null", "--max-time", "10", "http://127.0.0.1/"]
+      interval: 120s
+      timeout: 10s
+      start_period: 120s
+      retries: 3
+```
 
-Start with docker compose up -d. Inspect with docker compose ps and docker compose logs --tail=100 bbs.
+Start with `docker compose up -d` and inspect with `docker compose ps` and `docker compose logs --tail=100 bbs`.
 
-## Environment variables
-
-| Variable | Image default | Purpose |
-| --- | --- | --- |
-| TZ | Etc/UTC | System timezone used by processes and logs. Set an installed IANA timezone such as America/Argentina/Cordoba when needed. |
-| TERM | xterm | Terminal type for console tools. |
-| DENO_DIR | /sbbs-data/.deno | Persistent Deno cache and generated module directory. Keep it inside the data volume. |
-| SBBSCTRL | /sbbs/ctrl | Synchronet control directory inside the container; it links to /sbbs-data/ctrl. |
-| SBBSEXEC | /sbbs/exec | Synchronet executable directory inside the container. |
-| PATH | /usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/sbbs/scripts:/sbbs/exec | Runtime command search path. Do not replace it without preserving system and Synchronet paths. |
-
-Synchronet configuration is stored in the mounted control directory; there are no image-specific passwords or required application environment variables. Do not put sysop credentials in an image layer or public repository.
-
-Build-time arguments are DEBIAN_BASE (default debian:trixie-slim), SYNCHRONET_COMMIT (exact upstream commit), SYNCHRONET_VERSION (version string validated against that commit), DENO_VERSION and DENO_SHA256 (verified Deno release archive), and BUILD_DATE (OCI metadata). They do not configure a running BBS.
-
-## Ports and network exposure
-
-Ports listen inside the container only when enabled by ctrl/services.ini and ctrl/sbbs.ini. Docker publishes only ports listed in ports:. The production mapping used for the source data this image was prepared against is:
-
-| Host port | Container port | Service | Exposure notes |
-| ---: | ---: | --- | --- |
-| 23 | 23 | Telnet | Plaintext; keep off untrusted networks. |
-| 2323 | 22 | Synchronet SSH | Host uses 2323 to avoid replacing host SSH. |
-| 21 | 21 | FTP | Plaintext; keep off untrusted networks. |
-| 513 | 513 | Rlogin | Legacy plaintext protocol. |
-| 1123 | 1123 | Web terminal WebSocket | Existing Nginx virtual host fronts this service. |
-| 6667 | 6667 | IRC | Publish only when the IRC service is enabled. |
-| 24554 | 24554 | BinkP | FidoNet mail transfer. |
-| 25 | 25 | SMTP | Mail service. |
-| 110 | 110 | POP3 | Plaintext unless separately protected. |
-| 143 | 143 | IMAP | Plaintext unless separately protected. |
-| 465 | 465 | SMTP over TLS | Encrypted mail submission. |
-| 587 | 587 | SMTP submission | Use the configured TLS policy. |
-| 993 | 993 | IMAP over TLS | Encrypted mail access. |
-| 995 | 995 | POP3 over TLS | Encrypted mail access. |
-| 70 | 70 | Gopher | Optional legacy service. |
-| 79 | 79 | Finger | Optional legacy service. |
-| 119 | 119 | NNTP | Plaintext unless separately protected. |
-| 563 | 563 | NNTP over TLS | Encrypted news access. |
-| 17 | 17 | QOTD | Optional legacy service. |
-| 18 | 18 | MSP | Optional legacy service. |
-| 11 | 11 | ActiveUser | Optional Synchronet status service. |
-| 5500 | 5500 | Hotline | Optional service. |
-| 5501 | 5501 | Hotline transfer | Optional service. |
-| 24553 | 24553 | BinkP over TLS | Encrypted FidoNet transfer. |
-| 11235 | 11235 | Secure web terminal | WebSocket TLS service. |
-| 10088 | 10088 | JSON API | Keep on trusted networks and behind access controls. |
-
-The internal HTTP service on port 80 is used by the image healthcheck and can serve webv4. Port 443 is available for a separately configured HTTPS service. PETSCII ports 64 and 128 are not published in the examples; publish them only if you need PETSCII access. Do not publish every listed port automatically: enable and publish only the services the BBS needs.
-
-This image does not change host firewall, reverse-proxy, DNS, or tunnel configuration. Block plaintext services from the WAN with a host firewall (for example a DOCKER-USER iptables/nftables rule) before publishing ports.
-
-## Data volume and layout
-
-Mount one persistent directory at /sbbs-data. The image initializes missing directories from build defaults, links them into /sbbs, saves image defaults under backup/defaults, and runs upstream update.js when its recorded Synchronet version changes.
-
-| Path under /sbbs-data | Contents |
-| --- | --- |
-| backup/ | Backups and backup/defaults/, the image's shipped defaults. |
-| ctrl/ | sbbs.ini, services.ini, modopts.ini, text configuration, and BBS settings. |
-| data/ | User records, message bases, file metadata, and other live BBS data. |
-| .deno/ | Deno cache and generated files. |
-| fido/ | FidoNet configuration and queue data. |
-| mods/ | Local scripts and customizations. |
-| nodes/ | Persistent node directories such as node1, node2, and later nodes. |
-| text/ | Menus and BBS text files. |
-| web/ | Web content served by webv4. |
-| xtrn/ | External programs and door configuration. |
-
-Keep all data mounted when replacing the container. The container runs as sbbs UID/GID 1000; host bind-mounted data should be owned by UID/GID 1000. Never run a trial container against a directory used by a live Synchronet process.
-
-The host syslog socket can optionally be mounted read-write at /dev/log when the host is configured to receive Synchronet syslog messages. The default command is ["/sbbs/scripts/sbbs", "syslog"].
+---
 
 ## Configuration
 
-Edit persistent configuration in data/ctrl/ on the host:
+### Environment Variables
 
-- sbbs.ini controls the Synchronet server and interfaces.
-- services.ini enables services and selects their ports.
-- modopts.ini holds module options, including webv4 behavior.
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `TZ` | `Etc/UTC` | System timezone used by processes and logs (any installed IANA timezone, e.g. `America/New_York`). |
+| `TERM` | `xterm` | Terminal type for console tools. |
+| `DENO_DIR` | `/sbbs-data/.deno` | Persistent Deno cache and generated module directory inside the data volume. |
+| `SBBSCTRL` | `/sbbs/ctrl` | Synchronet control directory inside the container (symlinks to `/sbbs-data/ctrl`). |
+| `SBBSEXEC` | `/sbbs/exec` | Synchronet executable directory inside the container. |
+| `PATH` | `/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/sbbs/scripts:/sbbs/exec` | Runtime command search path. Preserve Synchronet paths if overriding. |
 
-The image ships a container-compatible default interface and web path. The initializer does not overwrite an existing ctrl/sbbs.ini; use Synchronet configuration tools or edit persistent files deliberately. Keep a copy of ctrl/ before changing settings. For a reverse proxy, attach only the BBS and proxy to a private shared network, and keep Docker's published ports and host firewall aligned.
+Synchronet configuration lives in `/sbbs-data/ctrl/` (`sbbs.ini`, `services.ini`, `modopts.ini`). The initializer does not overwrite an existing `ctrl/sbbs.ini`. Never store sysop credentials in an image layer or public repository.
 
-## Migration from bbsio/synchronet
+### Volumes and UID/GID
 
-This image preserves the /sbbs-data layout and is designed for the live 3.22a data line. Stop the old container and make a complete cold copy of the data before testing. Never mount the same data directory into both images.
+| Container Path | Mode / Owner | Purpose |
+| --- | --- | --- |
+| `/sbbs-data` | `1000:1000` (`sbbs`) | Persistent BBS state: `backup/`, `ctrl/`, `data/`, `.deno/`, `fido/`, `mods/`, `nodes/`, `text/`, `web/`, `xtrn/`. |
+| `/dev/log` *(optional)* | Host syslog socket | Optional read-write mount so `["/sbbs/scripts/sbbs", "syslog"]` forwards events to host syslog / `fail2ban`. |
 
-The old bbsio/synchronet:latest tag is frozen on Synchronet 3.19c (April 2023). That release can spin at 100% CPU while idle in sbbs/termOutput. Do not use that tag as an upgrade source or destination. The live 3.22a nightly line avoids that idle-loop regression. Do not downgrade live data to 3.21e or older.
+Never mount the same `/sbbs-data` directory into two Synchronet containers simultaneously.
 
-Safe migration sequence:
+### Ports
 
-1. Stop the existing BBS service.
-2. Copy the entire /sbbs-data tree, including .deno, ctrl, data, fido, mods, nodes, text, web, and xtrn.
-3. Start a side-by-side container using the copied tree, loopback-only host mappings, and unused host ports.
-4. Check health, logs, login menu, enabled protocols, data version, and idle CPU.
-5. Only after those checks pass, arrange rollback and update the live Compose service to the reviewed image digest.
-6. Keep the previous image digest, Compose files, and original data backup until the new service has been stable.
+Ports listen inside the container only when enabled in `ctrl/services.ini` and `ctrl/sbbs.ini`. Publish only the protocols your deployment uses:
 
-Inspect the registry digest and pin it in Compose before production deployment. Nightly and latest may move after upstream or Debian updates.
+| Container Port | Service | Exposure Notes |
+| ---: | --- | --- |
+| `23` | Telnet | Plaintext; keep off untrusted networks. |
+| `22` | Synchronet SSH | Typically mapped to host `2323` to avoid colliding with host `sshd`. |
+| `21` | FTP | Plaintext; keep off untrusted networks. |
+| `80` / `443` | HTTP / HTTPS (webv4) | Port `80` is probed by the built-in healthcheck. |
+| `513` | Rlogin | Legacy plaintext protocol. |
+| `1123` / `11235` | Web terminal WebSocket (plain / TLS) | Commonly fronted by a reverse proxy. |
+| `6667` / `6697` | IRC / IRC over TLS | Enable explicitly in `services.ini` when needed. |
+| `24554` / `24553` | BinkP / BinkP over TLS | FidoNet mail transfer. |
+| `25`, `465`, `587` | SMTP / SMTPS / Submission | Mail transfer and submission. |
+| `110`, `143`, `993`, `995` | POP3 / IMAP (plain and TLS) | Mail access. |
+| `70`, `79`, `119`, `563`, `17`, `18`, `11`, `5500`, `5501`, `10088` | Legacy & JSON API services | Optional; restrict `10088` (JSON API) to trusted networks. |
 
-## Backup and restore
+Block plaintext protocols from untrusted networks using a host firewall (for example, `DOCKER-USER` iptables/nftables rules) before publishing ports.
 
-For a consistent filesystem backup, stop the BBS service first. From the directory containing compose.yaml and data/:
-
-    docker compose stop bbs
-    tar --numeric-owner --acls --xattrs -czf "../synchronet-data-$(date -u +%Y%m%dT%H%M%SZ).tar.gz" data
-    docker compose start bbs
-
-Store backups off-host and test restores. To restore a selected archive, stop the service, preserve the current directory, extract the archive, restore ownership, then restart:
-
-    docker compose down
-    mv data data.before-restore
-    mkdir data
-    archive="$(ls -1t ../synchronet-data-*.tar.gz | head -n1)"
-    tar --numeric-owner --acls --xattrs -xzf "$archive" -C data
-    sudo chown -R 1000:1000 data
-    docker compose up -d
-
-The restore example selects the newest matching archive; choose another file explicitly if that is not the intended backup. Retain the original directory until the restored BBS is verified.
-
-## Security
-
-- The main process runs as unprivileged sbbs (UID/GID 1000). The data directory must be writable by that account.
-- The image grants sbbs passwordless sudo for initialization and low-port compatibility and gives the Synchronet executable cap_net_bind_service. Do not add Docker's no-new-privileges option to the live service: it prevents the required privilege transition and has caused low-port startup failures. Do not set security_opt: no-new-privileges:true.
-- Telnet, FTP, Rlogin, and some mail/news services may transmit credentials or content in plaintext. Use encrypted protocols where configured and preserve host-side WAN firewall blocks.
-- Synchronet syslog output can feed the host fail2ban jail when /dev/log is mounted and the host routes the synchronet identifier. Fail2ban and firewall rules are host responsibilities.
-- The image includes Debian's CA bundle at /etc/ssl/certs/ca-certificates.crt. If a host has a documented local CA-store mitigation, preserve its read-only CA mounts and verify outbound TLS before removing them.
-- Do not put SYSOP-CREDENTIALS, Docker Hub credentials, or other secrets in an image, Compose file, CI logs, or public repository.
-- Apply resource limits and host network policy appropriate to the deployment. The sample Compose file binds to loopback.
+---
 
 ## Healthcheck
 
-The image checks http://127.0.0.1/ with curl every 120 seconds, allows a 120-second startup period, and fails after three unsuccessful checks. The check treats HTTP 2xx and 3xx responses as healthy. Compose can override it, but should continue probing webv4 over HTTP; /dev/tcp shell probes are not supported.
+```dockerfile
+HEALTHCHECK --interval=120s --timeout=10s --start-period=120s --retries=3 \
+  CMD curl --fail --silent --show-error --output /dev/null --max-time 10 http://127.0.0.1/
+```
 
-## Build from source
+The healthcheck probes Synchronet's internal `webv4` HTTP listener on `http://127.0.0.1/` every 120 seconds (avoiding excessive guest login/logout log noise from shorter intervals) and treats HTTP `2xx`/`3xx` as healthy.
 
-The build targets linux/amd64. It uses debian:trixie-slim, upgrades packages at build time, verifies the Deno archive SHA-256, and compiles the exact Synchronet commit passed as SYNCHRONET_COMMIT.
+---
 
-    docker buildx build --platform linux/amd64 --load --build-arg SYNCHRONET_COMMIT=933e8499ac81251da7929f16cdcff3ca71239cdb --build-arg SYNCHRONET_VERSION=3.22a --build-arg DENO_VERSION=2.9.8 --build-arg DENO_SHA256=e890975bc2549807bbcc0b584ffafda72cc7c93349dd99c80483dd784f6c4609 --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" --tag dgcosenza/synchronet:3.22a-933e849 .
+## Upgrading and Migrating from `bbsio/synchronet`
 
-The build stage installs current Debian compiler and upstream prerequisites, including GNU make, GCC/G++, libarchive, ncurses, NSPR, OpenSSL development files, Perl, Python 3, patch, and pkgconf. Synchronet builds vendored cryptlib and SpiderMonkey/libmozjs from the pinned upstream tree. The final stage contains runtime libraries and tools, not the compiler toolchain. Debian packages and Deno can change between builds; use the image digest to identify an exact published artifact.
+This image preserves the `/sbbs-data` layout for the Synchronet `3.22a` data line.
 
-## Daily maintenance and CI
+> **Important:** The old `bbsio/synchronet:latest` tag is frozen on Synchronet `3.19c` (April 2023), which can spin at 100% CPU while idle in `sbbs/termOutput`. Do not downgrade `3.22a` data to `3.21e` or older.
 
-The public repository's GitHub Actions workflow runs daily, on pushes to `main`, and on manual dispatch. Each run polls Synchronet master, resolves the current version from source, fetches the current Deno release, rebuilds on the floating Debian Trixie base with apt-get upgrade, and scans with Trivy. A fixable critical or high vulnerability fails the scan and prevents publication. When publishing is enabled, the workflow also syncs the Docker Hub short description from `DOCKERHUB_SHORT_DESCRIPTION.txt` and the full overview from this README.
+1. Stop the existing BBS container and take a cold backup of the entire `/sbbs-data` tree (`tar --numeric-owner --acls --xattrs -czf ...`).
+2. Start a side-by-side trial container against a **copy** of `/sbbs-data` on unused loopback ports.
+3. Verify healthcheck status, startup logs, enabled protocols, and idle CPU.
+4. Pin the reviewed image digest in Compose (`dgcosenza/synchronet:latest@sha256:<digest>`), recreate the service, and keep the previous image tag and backup for rollback.
 
-The workflow builds and scans even when Docker Hub credentials are absent. Publishing requires the GitHub Actions secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN; if either is missing, the Hub push is skipped.
+---
 
-For production deployments, keep the moving tag paired with its immutable registry digest so tooling can detect upstream movement without running an unpinned image. To establish the initial pin, pull `dgcosenza/synchronet:nightly`, read its manifest digest with `docker image inspect dgcosenza/synchronet:nightly --format '{{index .RepoDigests 0}}'`, then set the Compose image to `dgcosenza/synchronet:nightly@sha256:<manifest-digest>`. Use the service's Compose name with `docker compose pull <service>` and `docker compose up -d --no-deps <service>` when applying that exact digest.
+## Security
 
-Check periodically whether the moving tag points to a new digest. After reviewing and testing a new Synchronet image against a copy of your data, back up the Compose file and data, update the digest pin, recreate only the BBS service, verify the healthcheck, and roll back to the previous digest if verification fails. Do not deploy an unpinned moving tag or use automatic updaters such as Watchtower.
+- **Vulnerability scan policy:** Every CI build runs **Trivy** (full table artifact, SARIF upload to GitHub Code Scanning, and blocking `--ignore-unfixed` gate) and **Grype** (`--only-fixed`, severity cutoff `high`, blocking gate), plus generates an **SPDX SBOM** artifact via Syft. Publication is blocked on any fixable `CRITICAL` or `HIGH` finding.
+- **Current status:** **0 fixable Critical/High** vulnerabilities across Debian 13 OS packages and runtime libraries (verified every build; unfixed upstream Debian advisories, if any, are recorded in the `trivy-report` CI artifact and resolved automatically on daily rebuilds once Debian Security publishes fixes).
+- **Non-root runtime and capability model:** The BBS runs as non-root `sbbs` (UID/GID `1000`) with `cap_net_bind_service=+ep` on `/sbbs/exec/sbbs`. Because initialization adjusts volume ownership and low-port privileges via `sudo`, **do not** set `security_opt: no-new-privileges:true` on this container.
+- **CA bundle:** Ships the current Debian 13 CA bundle at `/etc/ssl/certs/ca-certificates.crt`.
+- See [`SECURITY.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/SECURITY.md) for reporting guidelines.
 
-## Troubleshooting
+---
 
-- Container exits while binding low ports: confirm the service is not configured with no-new-privileges, check getcap /sbbs/exec/sbbs, and inspect Synchronet startup logs.
-- Permission denied under /sbbs-data: make the host directory and its contents UID/GID 1000, then restart. Avoid world-writable permissions.
-- Healthcheck is unhealthy: verify the web service is enabled, curl http://127.0.0.1/ returns 2xx/3xx inside the container, and inspect docker logs.
-- Upgrade or version error: stop the new container, preserve its data copy and logs, and restore the pre-upgrade data if needed. Do not test migrations against the only live copy.
-- High idle CPU: confirm the image is 3.22a or newer. Do not use the frozen bbsio/synchronet:latest 3.19c image.
-- TLS trust failures: verify the system CA file and any read-only host CA override; do not remove an existing mitigation until outbound TLS checks pass.
-- Service bind errors: compare enabled ports in ctrl/services.ini with container ports and host mappings. Confirm that another process is not already using the host port.
+## Build Locally
 
-## License and credits
+```bash
+git clone https://github.com/dgcosenza/synchronet-docker.git
+cd synchronet-docker
 
-Synchronet Version 3 is copyrighted by Rob Swindell. Its components are covered by the GNU GPL, with XPDEV, SMBLIB, CIOLIB, UIFC, and XSDK under the LGPL; see the [official Synchronet copyright notice](https://www.synchro.net/copyright.html) and the license files in the pinned source tree. Synchronet includes vendored cryptlib and SpiderMonkey/libmozjs components; their notices remain in upstream source.
+docker buildx build \
+  --platform linux/amd64 \
+  --load \
+  --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --build-arg IMAGE_REVISION="$(git rev-parse HEAD)" \
+  -t dgcosenza/synchronet:local \
+  .
+```
 
-The build adapts the ISC-licensed bbs-io/synchronet-docker recipe and initialization behavior. Its copyright and permission notice is retained in THIRD-PARTY-NOTICES.md. Debian packages and Deno are distributed under their respective upstream licenses. This repository does not claim ownership of Synchronet or its third-party components.
+| Build Arg | Default | Purpose |
+| --- | --- | --- |
+| `DEBIAN_BASE` | `debian:trixie-slim` | Base OS image. |
+| `SYNCHRONET_COMMIT` | `c20f7377662025b629978cfeade8563a6a7ac97e` | Pinned upstream Synchronet commit (overridden daily by CI). |
+| `SYNCHRONET_VERSION` | `3.22a` | Expected version validated against `sbbsdefs.h`. |
+| `DENO_VERSION` | `2.9.8` | Official Deno release used by the init script (overridden daily by CI). |
+| `DENO_SHA256` | `e890975b...` | Verified SHA-256 checksum of the Deno archive. |
+| `BUILD_DATE` | `unknown` | RFC 3339 UTC build timestamp. |
+| `IMAGE_REVISION` | `""` | Packaging repository Git SHA. |
+| `IMAGE_SOURCE` | `https://github.com/dgcosenza/synchronet-docker` | Source URL for OCI labels. |
 
-Container packaging, CI, and documentation are maintained by Daniel G. Cosenza from FNX Labs.
+---
 
-## Changelog
+## Update Policy
 
-- 2026-11-20: Initial Debian 13 image from Synchronet 3.22a commit 6bd53d6b60c4edaddead52a36be2c5479f1aeafb; uses Debian Trixie 13.7, Deno 2.9.8, a multi-stage source build, UID/GID 1000 runtime, webv4 healthcheck, and digest-based release policy.
-- 2026-11-20: Updated the default source pin to Synchronet 3.22a commit 933e8499ac81251da7929f16cdcff3ca71239cdb after upstream signed-character fixes.
-- 2026-11-20: Published immutable 3.22a source-commit tags and current `nightly`/`latest` tags; GitHub Actions now runs on main pushes and syncs the Docker Hub overview after successful publication.
+[`.github/workflows/daily.yml`](https://github.com/dgcosenza/synchronet-docker/blob/main/.github/workflows/daily.yml) runs automatically every day at **04:45 UTC**, on pushes to `main`, on pull requests (verification only, without pushing), and via `workflow_dispatch`. Every scheduled run executes a seven-step automated pipeline (gated by `.github/workflows/public-check.yml`):
+
+1. **Upstream check:** Resolves the latest Synchronet `master` commit from `SynchronetBBS/sbbs`, validates `VERSION`/`REVISION` in `src/sbbs3/sbbsdefs.h`, queries the latest Deno release via the authenticated GitHub API (with official SHA-256 verification), compares against `versions.json`, and writes an `upstream-changes.md` artifact.
+2. **No-cache rebuild:** Rebuilds `linux/amd64` with `--no-cache` on schedule on fully upgraded `debian:trixie-slim` (`apt-get update && apt-get -y upgrade`) and generates an **SPDX SBOM** (`sbom.spdx.json`) and build provenance artifact.
+3. **Vulnerability fix and gate:** Scans with **Trivy** (table, JSON, SARIF upload to Code Scanning, and blocking `--ignore-unfixed` gate) and **Grype** (blocking `--only-fixed` gate, severity cutoff `high`), diffs against the previous scan to report resolved CVEs, and retains scan artifacts for 90 days.
+4. **Smoke test:** Executes [`tests/smoke.sh`](https://github.com/dgcosenza/synchronet-docker/blob/main/tests/smoke.sh) to verify fresh `/sbbs-data` initialization, non-root `sbbs` (UID/GID `1000`), `cap_net_bind_service`, HTTP webv4 readiness, and a negative closed-port probe.
+5. **Publish:** On non-PR builds when registry credentials are configured, pushes `nightly`, `latest`, `<version>`, `<version>-<YYYYMMDD>`, `<version>-<commit>-<YYYYMMDD>`, `sha-<short>`, and immutable `<version>-<commit>` tags to Docker Hub and records the digest.
+6. **Automated documentation sync:** Commits updated `versions.json`, the README `Current Versions` block, and a dated `CHANGELOG.md` entry (upstream changes, resolved CVEs, and digest) via `github-actions[bot]` with `[skip ci]` when content changes, then syncs the Docker Hub overview and short description via `peter-evans/dockerhub-description`.
+7. **Failure alerting:** If any step fails on `main` or a scheduled run, CI opens or updates a single GitHub issue labeled `ci-failure` with the failing job and run link, and automatically closes it on the next green run.
+
+---
+
+## Design Decisions
+
+- **Debian 13 (`trixie-slim`) multi-stage build:** Synchronet compiles C/C++ components (including vendored cryptlib and SpiderMonkey) cleanly against current Debian 13 glibc and OpenSSL 3. Compilers and `-dev` headers stay strictly in the `build` stage and are excluded from the `runtime` image.
+- **Checksum-verified Deno runtime:** Kept solely for drop-in compatibility with the `bbs-io/synchronet-docker` `/sbbs-data` initialization logic (`init.ts`), verified against the official release SHA-256 on every build.
+- **120-second healthcheck interval:** Synchronet records a guest login/logout session for every HTTP probe; 120 seconds keeps liveness detection responsive without flooding BBS logs.
+- **No `no-new-privileges`:** Required because `sbbs-init` reconciles `/sbbs-data` ownership and `sbbs` uses `cap_net_bind_service` to bind classic BBS ports below 1024.
+
+---
+
+## License and Credits
+
+- **Container packaging, CI, and documentation:** Released under the [MIT License](https://github.com/dgcosenza/synchronet-docker/blob/main/LICENSE) — maintained by **Daniel G. Cosenza from FNX Labs**.
+- **Synchronet BBS:** Copyright Rob Swindell (GNU GPL / LGPL — see [synchro.net/copyright.html](https://www.synchro.net/copyright.html)).
+- **Initialization recipe:** Adapted from the ISC-licensed [`bbs-io/synchronet-docker`](https://github.com/bbs-io/synchronet-docker) project.
+- Full third-party notices: [`THIRD-PARTY-NOTICES.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/THIRD-PARTY-NOTICES.md).
+- Release history: [`CHANGELOG.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/CHANGELOG.md).
