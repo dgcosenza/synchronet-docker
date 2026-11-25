@@ -32,6 +32,9 @@ test "$GID_ACTUAL" = "1000"
 docker exec "$NAME" getcap /sbbs/exec/sbbs | grep -q 'cap_net_bind_service'
 
 # Wait for Synchronet initialization and webv4 HTTP service on port 80.
+# Fresh unconfigured Synchronet databases have no Guest user yet (so index.xjs
+# cannot open a guest session); create a static probe file once web/root exists
+# and verify webv4 serves it with HTTP 200.
 READY=0
 for _ in $(seq 1 60); do
   if ! docker ps -q --filter "name=^/${NAME}$" | grep -q .; then
@@ -39,8 +42,11 @@ for _ in $(seq 1 60); do
     docker logs "$NAME" >&2 || true
     exit 1
   fi
-  CODE="$(docker exec "$NAME" curl -s --max-time 5 -o /dev/null -w '%{http_code}' http://127.0.0.1/ 2>/dev/null || true)"
-  if printf '%s' "$CODE" | grep -qE '^[23][0-9][0-9]$'; then
+  if [ -d "${TMPDATA}/web/root" ] && [ ! -f "${TMPDATA}/web/root/smoke.txt" ]; then
+    docker exec "$NAME" sh -c 'printf "synchronet-smoke-ok\n" > /sbbs-data/web/root/smoke.txt' 2>/dev/null || true
+  fi
+  CODE="$(docker exec "$NAME" curl -s --max-time 5 -o /dev/null -w '%{http_code}' http://127.0.0.1/smoke.txt 2>/dev/null || true)"
+  if [ "$CODE" = "200" ]; then
     READY=1
     break
   fi
@@ -48,13 +54,14 @@ for _ in $(seq 1 60); do
 done
 
 if [ "$READY" -ne 1 ]; then
-  echo "ERROR: Synchronet webv4 did not return 2xx/3xx within timeout." >&2
+  echo "ERROR: Synchronet webv4 did not return HTTP 200 within timeout (last code=${CODE:-none})." >&2
   docker logs "$NAME" >&2 || true
   exit 1
 fi
 
-# Run the exact healthcheck command inside the container.
-docker exec "$NAME" curl --fail --silent --show-error --output /dev/null --max-time 10 http://127.0.0.1/
+# Verify webv4 serves the expected static probe body and healthcheck curl succeeds.
+BODY="$(docker exec "$NAME" curl --fail --silent --show-error --max-time 10 http://127.0.0.1/smoke.txt)"
+test "$BODY" = "synchronet-smoke-ok"
 
 # Verify sbbs daemon process runs under the non-root sbbs account.
 docker exec "$NAME" ps -eo user,comm | grep -qE '^sbbs[[:space:]]+sbbs$'
