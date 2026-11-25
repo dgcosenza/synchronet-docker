@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository builds and maintains a source-built Synchronet BBS container on Debian 13 Trixie. Daniel G. Cosenza maintains the image under the dgcosenza account. The image tracks current Synchronet upstream master, builds the commit recorded in its OCI labels, upgrades Debian packages during each build, and uses the current checksum-verified Deno release.
+This repository builds and maintains a source-built Synchronet BBS container on Debian 13 Trixie. The image is maintained by Daniel G. Cosenza from FNX Labs. The image tracks current Synchronet upstream master, builds the commit recorded in its OCI labels, upgrades Debian packages during each build, and uses the current checksum-verified Deno release.
 
 Synchronet is developed at [gitlab.synchro.net/main/sbbs](https://gitlab.synchro.net/main/sbbs). The build fetches the matching commit from the maintained [SynchronetBBS GitHub mirror](https://github.com/SynchronetBBS/sbbs) because unauthenticated GitLab smart-HTTP refs are not consistently available to container builders. The packaging modernizes the Debian 11 based bbsio/synchronet recipe; it is independently maintained and is not an official Synchronet or BBS-IO image.
 
@@ -233,6 +233,8 @@ Check periodically whether the moving tag points to a new digest. After reviewin
 Synchronet Version 3 is copyrighted by Rob Swindell. Its components are covered by the GNU GPL, with XPDEV, SMBLIB, CIOLIB, UIFC, and XSDK under the LGPL; see the [official Synchronet copyright notice](https://www.synchro.net/copyright.html) and the license files in the pinned source tree. Synchronet includes vendored cryptlib and SpiderMonkey/libmozjs components; their notices remain in upstream source.
 
 The build adapts the ISC-licensed bbs-io/synchronet-docker recipe and initialization behavior. Its copyright and permission notice is retained in THIRD-PARTY-NOTICES.md. Debian packages and Deno are distributed under their respective upstream licenses. This repository does not claim ownership of Synchronet or its third-party components.
+
+Container packaging, CI, and documentation are maintained by Daniel G. Cosenza from FNX Labs.
 
 ## Changelog
 
