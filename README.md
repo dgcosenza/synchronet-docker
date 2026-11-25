@@ -42,17 +42,10 @@ The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchro
 | Architectures | `linux/amd64` |
 | Uncompressed size (per arch) | `amd64: 136.0 MB` |
 | Last verified build (UTC) | `2026-11-25` |
-| Published multi-arch digest | `dgcosenza/synchronet@sha256:714c8f7f2e0cc57e7b32c8bc810f3f2273db358d47e40a9036bba461568695ea` |
-| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:714c8f7f2e0cc57e7b32c8bc810f3f2273db358d47e40a9036bba461568695ea` |
+| Published multi-arch digest | `dgcosenza/synchronet@sha256:ae13af6d207336e9f31ba1c97a2fc8ced4d771636a58fc718c092b99678021ff` |
+| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:ae13af6d207336e9f31ba1c97a2fc8ced4d771636a58fc718c092b99678021ff` |
 | Supply chain | Cosign OIDC signed + SPDX & CycloneDX SBOM attestations + SLSA Build L3 provenance |
 | Security gate (Trivy + Grype on SBOM) | **0 fixable Critical/High** (33 upstream-unfixed) |
-
-**Recent upstream changes:**
-- Synchronet master advanced from 71df4cf to 335365b.
-- 983fb5b: Universal Viewer: text coloring, search, archive and disk image browsing
-- 4a13f60: Merge branch 'nelgin/univiewer-update' into 'master'
-- bb64f4d: pdfview.js: Loading message, mouse_stop(), fix the notes
-- 335365b: Merge branch 'nelgin/pdfview-fixes' into 'master'
 <!-- versions:end -->
 
 ---

@@ -12,14 +12,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Mai
 ### Automated Daily Build
 - Verified components: Synchronet BBS `3.22a (335365b)`, Deno `2.9.8`, Base OS `Debian 13.8 (trixie-slim)`.
 - Architectures verified: `linux/amd64` (native smoke tests + Dive efficiency gate).
-- Upstream changes:
-  - Synchronet master advanced from 71df4cf to 335365b.
-  - 983fb5b: Universal Viewer: text coloring, search, archive and disk image browsing
-  - 4a13f60: Merge branch 'nelgin/univiewer-update' into 'master'
-  - bb64f4d: pdfview.js: Loading message, mouse_stop(), fix the notes
-  - 335365b: Merge branch 'nelgin/pdfview-fixes' into 'master'
+- Upstream status: no new upstream release since previous build; refreshed base OS and dependencies.
 - Vulnerability gate: **0 fixable Critical/High** in Trivy and Grype (SBOM scan) (33 upstream-unfixed).
-- Published multi-arch digest (Docker Hub + GHCR): `dgcosenza/synchronet@sha256:714c8f7f2e0cc57e7b32c8bc810f3f2273db358d47e40a9036bba461568695ea` (Cosign OIDC signed + SPDX/CycloneDX SBOM + SLSA L3 provenance).
+- Published multi-arch digest (Docker Hub + GHCR): `dgcosenza/synchronet@sha256:ae13af6d207336e9f31ba1c97a2fc8ced4d771636a58fc718c092b99678021ff` (Cosign OIDC signed + SPDX/CycloneDX SBOM + SLSA L3 provenance).
 ---
 
 ## [3.22a] — 2026-11-24
