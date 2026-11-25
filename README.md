@@ -5,7 +5,7 @@
 [![Upstream License: GPL-2.0-or-later](https://img.shields.io/badge/upstream-GPL--2.0--or--later-green.svg)](https://www.synchro.net/copyright.html)
 [![Signed with Cosign](https://img.shields.io/badge/signed-cosign%20OIDC-blueviolet.svg)](#supply-chain-verification)
 [![SLSA Level 3](https://img.shields.io/badge/SLSA-Level%203-brightgreen.svg)](#supply-chain-verification)
-[![Architectures](https://img.shields.io/badge/arch-amd64%20%7C%20arm64-informational.svg)](#supported-architectures)
+[![Architectures](https://img.shields.io/badge/arch-amd64-informational.svg)](#supported-architectures)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/dgcosenza/synchronet-docker/badge)](https://scorecard.dev/viewer/?uri=github.com/dgcosenza/synchronet-docker)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgcosenza/synchronet)](https://hub.docker.com/r/dgcosenza/synchronet)
 [![Docker Image Size](https://img.shields.io/docker/image-size/dgcosenza/synchronet/latest)](https://hub.docker.com/r/dgcosenza/synchronet)
@@ -73,9 +73,9 @@ image: dgcosenza/synchronet:latest@sha256:<digest>
 | Architecture | Status | Verification |
 | --- | --- | --- |
 | `linux/amd64` | **Published & natively tested** | Built, smoke-tested, Dive-gated, Syft/Trivy/Grype-scanned, and Cosign-signed on native x86_64 CI runners. |
-| `linux/arm64` | **Published & natively tested** | Built, smoke-tested, Dive-gated, Syft/Trivy/Grype-scanned, and Cosign-signed on native ARM64 CI runners. |
+| `linux/arm64` | **Not supported (upstream limitation)** | Synchronet's embedded SpiderMonkey 1.8.5 runtime registers an `aarch64` Linux constructor (`src/sbbs3/js_global.cpp`, `addr_compat_layout_hack`) that calls `personality(ADDR_COMPAT_LAYOUT)` and aborts with `Operation not permitted` under default container seccomp profiles (upstream `bbsio/synchronet` is likewise `amd64`-only). |
 
-Identical multi-arch OCI manifest digests are published to **Docker Hub** and **GHCR** (`ghcr.io/dgcosenza/*`), accompanied by automated signed [GitHub Releases](https://github.com/dgcosenza/synchronet-docker/releases).
+Identical signed OCI digests are published to **Docker Hub** and **GHCR** (`ghcr.io/dgcosenza/synchronet`), accompanied by automated signed [GitHub Releases](https://github.com/dgcosenza/synchronet-docker/releases).
 ---
 
 ## Quick Start

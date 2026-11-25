@@ -226,12 +226,6 @@ jobs:
             dive_sha: 0970549eb4a306f8825a84145a2534153badb4d7dcf3febd1967c706367c3d0e
             syft_sha: ad92bd3ec1b94a3df01d4d0aec199afa9c42b72e86da436ff5f837914d32706b
             grype_sha: f1ba7e2917ee1395618de20a98da0aa7c0fb1788927797651047c50502a37538
-          - arch: arm64
-            platform: linux/arm64
-            runner: ubuntu-24.04-arm
-            dive_sha: 2fcd2cf20f634ccdb41efac44048b204bfc867c115641f37a7420693ed480a18
-            syft_sha: 8efe605309c98798e1ee0cffdcf8c05ca26819b4cd44c0b03650f1e963e9bdb6
-            grype_sha: 819e5be3d9516432fedb7b6b56df7306c3a16607606dfc05826eefbb00e471da
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -519,7 +513,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Assemble multi-arch index on GHCR and mirror identical digest to Docker Hub
+      - name: Tag verified amd64 manifest on GHCR and mirror identical digest to Docker Hub
         id: index
         shell: bash
         env:
@@ -530,23 +524,18 @@ jobs:
         run: |
           set -euo pipefail
           DIG_AMD64="$(jq -r '.digest' .ci-in/arch-artifacts-amd64/arch-meta-amd64.json)"
-          DIG_ARM64="$(jq -r '.digest' .ci-in/arch-artifacts-arm64/arch-meta-arm64.json)"
-          test -n "$DIG_AMD64" && test -n "$DIG_ARM64"
+          test -n "$DIG_AMD64"
 
           SHA_TAG="sha-${GITHUB_SHA::7}"
           DATE_TAG="${VER}-${BDATE}"
           TAGS=("latest" "${VER}" "${DATE_TAG}" "${SHA_TAG}" "nightly" "${VER}-${SHORT_SHA}" "${VER}-${SHORT_SHA}-${BDATE}")
 
-          ARGS=()
           for t in "${TAGS[@]}"; do
-            [ -n "$t" ] && ARGS+=(-t "ghcr.io/${IMAGE_NAME}:${t}")
+            [ -n "$t" ] && crane tag "ghcr.io/${IMAGE_NAME}@${DIG_AMD64}" "$t"
           done
-          docker buildx imagetools create "${ARGS[@]}" \
-            "ghcr.io/${IMAGE_NAME}@${DIG_AMD64}" \
-            "ghcr.io/${IMAGE_NAME}@${DIG_ARM64}"
 
           INDEX_DIGEST="$(crane digest "ghcr.io/${IMAGE_NAME}:latest")"
-          echo "GHCR multi-arch index digest: ${INDEX_DIGEST}"
+          echo "GHCR published digest: ${INDEX_DIGEST}"
 
           if [ "$HUB_ENABLED" = "true" ]; then
             crane copy "ghcr.io/${IMAGE_NAME}@${INDEX_DIGEST}" "index.docker.io/${IMAGE_NAME}:latest"
@@ -554,14 +543,13 @@ jobs:
               [ -n "$t" ] && [ "$t" != "latest" ] && crane tag "index.docker.io/${IMAGE_NAME}@${INDEX_DIGEST}" "$t"
             done
             HUB_DIGEST="$(crane digest "index.docker.io/${IMAGE_NAME}:latest")"
-            echo "Docker Hub multi-arch index digest: ${HUB_DIGEST}"
+            echo "Docker Hub published digest: ${HUB_DIGEST}"
             test "${HUB_DIGEST}" = "${INDEX_DIGEST}"
           fi
 
           {
             echo "index_digest=${INDEX_DIGEST}"
             echo "amd64_digest=${DIG_AMD64}"
-            echo "arm64_digest=${DIG_ARM64}"
             echo "date_tag=${DATE_TAG}"
             echo "sha_tag=${SHA_TAG}"
           } >> "$GITHUB_OUTPUT"
@@ -571,7 +559,6 @@ jobs:
         env:
           INDEX_DIGEST: ${{ steps.index.outputs.index_digest }}
           DIG_AMD64: ${{ steps.index.outputs.amd64_digest }}
-          DIG_ARM64: ${{ steps.index.outputs.arm64_digest }}
           HUB_ENABLED: ${{ steps.hub_auth.outputs.enabled }}
         run: |
           set -euo pipefail
@@ -582,12 +569,8 @@ jobs:
 
           for reg in "${REGISTRIES[@]}"; do
             cosign sign --yes "${reg}@${INDEX_DIGEST}"
-            cosign sign --yes "${reg}@${DIG_AMD64}"
-            cosign sign --yes "${reg}@${DIG_ARM64}"
             cosign attest --yes --predicate .ci-in/arch-artifacts-amd64/sbom-amd64.spdx.json --type spdxjson "${reg}@${DIG_AMD64}"
             cosign attest --yes --predicate .ci-in/arch-artifacts-amd64/sbom-amd64.cdx.json --type cyclonedx "${reg}@${DIG_AMD64}"
-            cosign attest --yes --predicate .ci-in/arch-artifacts-arm64/sbom-arm64.spdx.json --type spdxjson "${reg}@${DIG_ARM64}"
-            cosign attest --yes --predicate .ci-in/arch-artifacts-arm64/sbom-arm64.cdx.json --type cyclonedx "${reg}@${DIG_ARM64}"
           done
 
       - name: Attest SLSA Build L3 provenance (GHCR)
@@ -613,28 +596,22 @@ jobs:
           VER: ${{ needs.resolve.outputs.upstream_version }}
           INDEX_DIGEST: ${{ steps.index.outputs.index_digest }}
           DIG_AMD64: ${{ steps.index.outputs.amd64_digest }}
-          DIG_ARM64: ${{ steps.index.outputs.arm64_digest }}
           HUB_ENABLED: ${{ steps.hub_auth.outputs.enabled }}
         run: |
           set -euo pipefail
           mkdir -p .rel
           cp .ci-in/arch-artifacts-amd64/sbom-amd64.spdx.json .rel/
           cp .ci-in/arch-artifacts-amd64/sbom-amd64.cdx.json .rel/
-          cp .ci-in/arch-artifacts-arm64/sbom-arm64.spdx.json .rel/
-          cp .ci-in/arch-artifacts-arm64/sbom-arm64.cdx.json .rel/
 
           AMD64_MB="$(jq -r '.size_mb' .ci-in/arch-artifacts-amd64/arch-meta-amd64.json)"
-          ARM64_MB="$(jq -r '.size_mb' .ci-in/arch-artifacts-arm64/arch-meta-arm64.json)"
           DEBIAN_VER="$(jq -r '.debian_version' .ci-in/arch-artifacts-amd64/arch-meta-amd64.json)"
 
           (
             cd .rel
             {
-              echo "# Multi-arch OCI digests"
+              echo "# OCI image digests (linux/amd64)"
               echo "${INDEX_DIGEST}  ghcr.io/${IMAGE_NAME}:${TAG}"
               [ "$HUB_ENABLED" = "true" ] && echo "${INDEX_DIGEST}  docker.io/${IMAGE_NAME}:${TAG}"
-              echo "${DIG_AMD64}  linux/amd64"
-              echo "${DIG_ARM64}  linux/arm64"
               echo "# SBOM SHA-256 checksums"
               sha256sum sbom-*.json
             } > checksums.txt
@@ -647,20 +624,20 @@ jobs:
           Maintained by **Daniel G. Cosenza from FNX Labs**.
 
           ### Verified Components
-          - **Upstream:** `SynchronetBBS/sbbs` `${VER}` (`GPL-2.0-or-later`)
-          - **Base OS:** Debian `${DEBIAN_VER}` (`trixie-slim`)
-          - **Architectures:** `linux/amd64` (${AMD64_MB} MB), `linux/arm64` (${ARM64_MB} MB)
+          - **Upstream:** \`SynchronetBBS/sbbs\` \`${VER}\` (\`GPL-2.0-or-later\`)
+          - **Base OS:** Debian \`${DEBIAN_VER}\` (\`trixie-slim\`)
+          - **Architecture:** \`linux/amd64\` (${AMD64_MB} MB) — \`linux/arm64\` unsupported upstream due to SpiderMonkey \`personality(ADDR_COMPAT_LAYOUT)\`
           - **Security gate:** 0 fixable Critical/High (Trivy + Grype on SPDX SBOM), Dive efficiency >= 95%
 
-          ### Identical Multi-Arch Digests
-          - **GHCR:** `ghcr.io/${IMAGE_NAME}@${INDEX_DIGEST}`
-          - **Docker Hub:** `${IMAGE_NAME}@${INDEX_DIGEST}`
+          ### Identical Signed Digests
+          - **GHCR:** \`ghcr.io/${IMAGE_NAME}@${INDEX_DIGEST}\`
+          - **Docker Hub:** \`${IMAGE_NAME}@${INDEX_DIGEST}\`
 
           ### Cosign Verification
           \`\`\`bash
-          cosign verify \
-            --certificate-identity-regexp="^https://github\\.com/${GITHUB_REPOSITORY}/\\.github/workflows/daily\\.yml@refs/heads/main$" \
-            --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+          cosign verify \\
+            --certificate-identity-regexp="^https://github\\.com/${GITHUB_REPOSITORY}/\\.github/workflows/daily\\.yml@refs/heads/main$" \\
+            --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \\
             ghcr.io/${IMAGE_NAME}@${INDEX_DIGEST}
           \`\`\`
           EOF
@@ -669,15 +646,13 @@ jobs:
             gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --title "Synchronet ${VER} (${TAG})" --notes-file .rel/notes.md
             gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber \
               .rel/checksums.txt .rel/checksums.txt.sigstore.json \
-              .rel/sbom-amd64.spdx.json .rel/sbom-amd64.cdx.json \
-              .rel/sbom-arm64.spdx.json .rel/sbom-arm64.cdx.json
+              .rel/sbom-amd64.spdx.json .rel/sbom-amd64.cdx.json
           else
             gh release create "$TAG" -R "$GITHUB_REPOSITORY" \
               --title "Synchronet ${VER} (${TAG})" \
               --notes-file .rel/notes.md \
               .rel/checksums.txt .rel/checksums.txt.sigstore.json \
-              .rel/sbom-amd64.spdx.json .rel/sbom-amd64.cdx.json \
-              .rel/sbom-arm64.spdx.json .rel/sbom-arm64.cdx.json
+              .rel/sbom-amd64.spdx.json .rel/sbom-amd64.cdx.json
           fi
 
       - name: Build updated versions metadata
@@ -689,7 +664,6 @@ jobs:
           set -euo pipefail
           DEBIAN_VER="$(jq -r '.debian_version' .ci-in/arch-artifacts-amd64/arch-meta-amd64.json)"
           AMD64_MB="$(jq -r '.size_mb' .ci-in/arch-artifacts-amd64/arch-meta-amd64.json)"
-          ARM64_MB="$(jq -r '.size_mb' .ci-in/arch-artifacts-arm64/arch-meta-arm64.json)"
           HUB_REF=""
           [ "$HUB_ENABLED" = "true" ] && HUB_REF="${IMAGE_NAME}@${INDEX_DIGEST}"
           GHCR_REF="ghcr.io/${IMAGE_NAME}@${INDEX_DIGEST}"
@@ -712,7 +686,6 @@ jobs:
             --arg image_digest "${HUB_REF}" \
             --arg ghcr_digest "${GHCR_REF}" \
             --arg amd64_mb "${AMD64_MB}" \
-            --arg arm64_mb "${ARM64_MB}" \
             --slurpfile cve cve-diff.json \
             '{
               image: $image,
@@ -722,8 +695,8 @@ jobs:
               upstream_version: $upstream_version,
               upstream_commit: $upstream_commit,
               changelog_version: ($upstream_version + "-" + $short_sha),
-              architectures: ["linux/amd64", "linux/arm64"],
-              sizes_mb: { amd64: $amd64_mb, arm64: $arm64_mb },
+              architectures: ["linux/amd64"],
+              sizes_mb: { amd64: $amd64_mb },
               signed: true,
               slsa_provenance: true,
               components: {
