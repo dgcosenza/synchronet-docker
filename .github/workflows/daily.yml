@@ -410,6 +410,7 @@ jobs:
       - name: Checkout main
         uses: actions/checkout@v7
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Download release metadata
