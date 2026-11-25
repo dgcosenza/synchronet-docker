@@ -36,12 +36,23 @@ The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchro
 <!-- versions:start -->
 | Component | Resolved Version |
 | --- | --- |
-| Synchronet BBS | `3.22a (c20f737)` |
+| Synchronet BBS | `3.22a (71df4cf)` |
 | Deno | `2.9.8` |
 | Base OS | `Debian 13.8 (trixie-slim)` |
+| Architectures | `linux/amd64` |
+| Uncompressed size (per arch) | `amd64: 135.2 MB` |
 | Last verified build (UTC) | `2026-11-25` |
-| Published digest | `dgcosenza/synchronet@sha256:7afdeb69d4787a98b31b43b424c360ec3abe094d60eb4db980cfa42da9033f89` |
-| Security gate (Trivy + Grype) | **0 fixable Critical/High** (33 upstream-unfixed) |
+| Published multi-arch digest | `dgcosenza/synchronet@sha256:c4fd4c5b3d57f157e7b1de4278c2304ec2c61920b68636c93fd49d74260e9142` |
+| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:c4fd4c5b3d57f157e7b1de4278c2304ec2c61920b68636c93fd49d74260e9142` |
+| Supply chain | Cosign OIDC signed + SPDX & CycloneDX SBOM attestations + SLSA Build L3 provenance |
+| Security gate (Trivy + Grype on SBOM) | **0 fixable Critical/High** (33 upstream-unfixed) |
+
+**Recent upstream changes:**
+- Synchronet master advanced from c20f737 to 71df4cf.
+- c837a86: Add the existing Synchronet OpenID Connect provider and setup guide
+- a735037: We don't need rewrite_lib.js here AFAIK
+- e339f32: Add OIDC sign-in with WebFinger discovery and dynamic registration
+- ba6c6a9: Restore ECDSA signing for OpenID Connect ID tokens
 <!-- versions:end -->
 
 ---

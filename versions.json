@@ -1,11 +1,21 @@
 {
   "image": "dgcosenza/synchronet",
   "upstream_name": "SynchronetBBS/sbbs",
+  "upstream_license": "GPL-2.0-or-later",
+  "packaging_license": "MIT",
   "upstream_version": "3.22a",
-  "upstream_commit": "c20f7377662025b629978cfeade8563a6a7ac97e",
-  "changelog_version": "3.22a-c20f737",
+  "upstream_commit": "71df4cf4ccb68b1c9b3776b0ad244b4e81b1e536",
+  "changelog_version": "3.22a-71df4cf",
+  "architectures": [
+    "linux/amd64"
+  ],
+  "sizes_mb": {
+    "amd64": "135.2"
+  },
+  "signed": true,
+  "slsa_provenance": true,
   "components": {
-    "Synchronet BBS": "3.22a (c20f737)",
+    "Synchronet BBS": "3.22a (71df4cf)",
     "Deno": "2.9.8",
     "Base OS": "Debian 13.8 (trixie-slim)"
   },
@@ -13,8 +23,9 @@
   "base_digest": "sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0",
   "debian_version": "13.8",
   "build_date": "2026-11-25",
-  "built_at_utc": "2026-11-25T02:55:11Z",
-  "image_digest": "dgcosenza/synchronet@sha256:7afdeb69d4787a98b31b43b424c360ec3abe094d60eb4db980cfa42da9033f89",
+  "built_at_utc": "2026-11-25T08:29:49Z",
+  "image_digest": "dgcosenza/synchronet@sha256:c4fd4c5b3d57f157e7b1de4278c2304ec2c61920b68636c93fd49d74260e9142",
+  "ghcr_digest": "ghcr.io/dgcosenza/synchronet@sha256:c4fd4c5b3d57f157e7b1de4278c2304ec2c61920b68636c93fd49d74260e9142",
   "fixable_critical_high": 0,
   "unfixed_cves": [
     "CVE-2025-69720",
