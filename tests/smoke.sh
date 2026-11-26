@@ -31,6 +31,29 @@ test "$GID_ACTUAL" = "1000"
 # Verify cap_net_bind_service capability is set on the sbbs binary.
 docker exec "$NAME" getcap /sbbs/exec/sbbs | grep -q 'cap_net_bind_service'
 
+# Wait for the container's Docker HEALTHCHECK to report healthy
+HEALTHY=0
+HEALTH_STATUS="missing"
+for _ in $(seq 1 180); do
+  HEALTH_STATUS="$(docker inspect --format '{{.State.Health.Status}}' "$NAME" 2>/dev/null || echo "missing")"
+  if [ "$HEALTH_STATUS" = "healthy" ]; then
+    HEALTHY=1
+    break
+  fi
+  if [ "$HEALTH_STATUS" = "missing" ] || [ "$(docker inspect --format '{{.State.Running}}' "$NAME" 2>/dev/null || echo false)" != "true" ]; then
+    echo "ERROR: container exited before becoming healthy (health status=${HEALTH_STATUS})" >&2
+    docker logs "$NAME" >&2 || true
+    exit 1
+  fi
+  sleep 2
+done
+if [ "$HEALTHY" -ne 1 ]; then
+  echo "ERROR: container did not become healthy within 360s (status=${HEALTH_STATUS:-unknown})" >&2
+  docker logs "$NAME" >&2 || true
+  exit 1
+fi
+echo "Docker healthcheck: healthy"
+
 # Wait for Synchronet initialization and webv4 HTTP service on port 80.
 # Fresh unconfigured Synchronet databases have no Guest user yet (so index.xjs
 # cannot open a guest session); create a static probe file once web/root exists
