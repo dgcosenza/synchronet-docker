@@ -10,7 +10,7 @@ Only the latest daily build of `dgcosenza/synchronet` on Debian 13 (`debian:13.8
 
 Every build in GitHub Actions is scanned with both **Trivy** and **Grype** and generates an **SPDX SBOM** artifact:
 
-- **Hard gate:** Builds fail and refuse publication if either Trivy (`--ignore-unfixed`) or Grype (`--only-fixed`) detects any **fixable `CRITICAL` or `HIGH`** vulnerability in OS packages or bundled libraries.
+- **Hard gate:** Builds fail and refuse publication if either Trivy (`--ignore-unfixed`) or Grype (`--only-fixed`) detects any **fixable vulnerability of any severity** in OS packages or bundled libraries.
 - **Daily rebuilds:** Scheduled daily builds run with `--no-cache` and execute `apt-get update && apt-get -y upgrade` to pick up Debian Security updates, Synchronet upstream commits, and Deno releases promptly.
 - **Unfixed advisories:** Advisories without an upstream vendor fix are logged in CI artifacts (`trivy-report`) and cleared automatically once Debian Security or upstream releases a patch.
 
