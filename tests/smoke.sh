@@ -36,12 +36,23 @@ docker exec "$NAME" getcap /sbbs/exec/sbbs | grep -q 'cap_net_bind_service'
 # "Guest account unavailable". Bootstrap the sysop and Guest accounts with
 # the upstream scripts exactly as a real install does, instead of weakening
 # the health probe.
+# sbbs.ini appears early in initialization, before the data volume (including
+# the user database) is hydrated. Wait until webv4 actually accepts requests;
+# provisioning earlier makes jsexec see an empty/incomplete user database.
+WEB_READY=0
 for _ in $(seq 1 90); do
-  if docker exec "$NAME" test -f /sbbs-data/ctrl/sbbs.ini 2>/dev/null; then
+  CODE="$(docker exec "$NAME" curl -s --max-time 5 -o /dev/null -w '%{http_code}' http://127.0.0.1/ 2>/dev/null || true)"
+  if [ -n "${CODE}" ] && [ "${CODE}" != "000" ]; then
+    WEB_READY=1
     break
   fi
   sleep 2
 done
+if [ "${WEB_READY}" -ne 1 ]; then
+  echo "ERROR: webv4 did not accept requests within 180s" >&2
+  docker logs "$NAME" >&2 || true
+  exit 1
+fi
 
 USER_COUNT="$(docker exec "$NAME" /sbbs/exec/jsexec -n -r 'writeln(system.stats.total_users)' 2>/dev/null | grep -oE '^[0-9]+' | head -1 || true)"
 if [ -z "${USER_COUNT}" ] || [ "${USER_COUNT}" -eq 0 ]; then
@@ -51,8 +62,21 @@ if [ -z "${USER_COUNT}" ] || [ "${USER_COUNT}" -eq 0 ]; then
   # generate a throwaway value at runtime and never print or persist it.
   echo "Creating initial bootstrap user account"
   BOOTSTRAP_PASS="$(openssl rand -hex 16)"
-  docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeuser.js Bootstrap -P "$BOOTSTRAP_PASS"
+  BOOTSTRAPPED=0
+  for _ in 1 2 3; do
+    OUT="$(docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeuser.js Bootstrap -P "$BOOTSTRAP_PASS" 2>&1 || true)"
+    printf '%s\n' "$OUT"
+    if printf '%s\n' "$OUT" | grep -q 'created successfully'; then
+      BOOTSTRAPPED=1
+      break
+    fi
+    sleep 5
+  done
   unset BOOTSTRAP_PASS
+  if [ "${BOOTSTRAPPED}" -ne 1 ]; then
+    echo "ERROR: could not create the bootstrap user" >&2
+    exit 1
+  fi
 fi
 echo "Ensuring Guest account exists"
 docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeguest.js

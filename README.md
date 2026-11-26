@@ -197,7 +197,7 @@ HEALTHCHECK --interval=120s --timeout=10s --start-period=120s --retries=3 \
 
 The healthcheck probes Synchronet's internal `webv4` HTTP listener on `http://127.0.0.1/` every 120 seconds (avoiding excessive guest login/logout log noise from shorter intervals) and treats HTTP `2xx`/`3xx` as healthy.
 
-On a **fresh** `/sbbs-data` volume, `webv4/index.xjs` requires a Guest account before it can serve the index. The CI smoke test bootstraps an initial user and the Guest account with the upstream `makeuser.js` / `makeguest.js` scripts before waiting for `status=healthy`, exactly as a real install does. Existing volumes with a Guest account are untouched.
+On a **fresh** `/sbbs-data` volume, `webv4/index.xjs` requires a Guest account before it can serve the index. The CI smoke test waits for webv4 to accept requests (so initialization is complete), then bootstraps an initial user and the Guest account with the upstream `makeuser.js` / `makeguest.js` scripts before waiting for `status=healthy`, exactly as a real install does. Existing volumes with a Guest account are untouched.
 
 ---
 
