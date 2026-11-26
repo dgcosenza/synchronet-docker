@@ -23,7 +23,7 @@ A source-built, actively maintained container image for **Synchronet BBS** on **
 
 ## Overview
 
-This repository builds and maintains a source-built **Synchronet BBS** container on **Debian 13 (trixie)** (`debian:trixie-slim`, latest Debian 13 point release — 13.8 as of 2026-11-24). Every CI build resolves the current upstream Synchronet `master` commit, validates the version header (`sbbsdefs.h`), upgrades all Debian packages (`apt-get update && apt-get -y upgrade`), installs the latest SHA-256-verified **Deno** release, runs a container smoke test, and gates publication on **0 fixable Critical/High vulnerabilities** in both **Trivy** and **Grype**.
+This repository builds and maintains a source-built **Synchronet BBS** container on **Debian 13 (trixie)** (`debian:trixie-slim`, latest Debian 13 point release — 13.8 as of 2026-11-24). Every CI build resolves the current upstream Synchronet `master` commit, validates the version header (`sbbsdefs.h`), upgrades all Debian packages (`apt-get update && apt-get -y upgrade`), installs the latest SHA-256-verified **Deno** release, runs a container smoke test, and gates publication on **0 fixable findings of any severity vulnerabilities** in both **Trivy** and **Grype**.
 
 Synchronet is developed at [gitlab.synchro.net/main/sbbs](https://gitlab.synchro.net/main/sbbs). The build fetches the exact commit from the maintained [SynchronetBBS GitHub mirror](https://github.com/SynchronetBBS/sbbs) because unauthenticated GitLab smart-HTTP refs are not consistently available to automated container builders. The packaging modernizes the Debian 11 `bbsio/synchronet` recipe; it is independently maintained and is not an official Synchronet or BBS-IO image.
 
@@ -45,7 +45,7 @@ The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchro
 | Published multi-arch digest | `dgcosenza/synchronet@sha256:1e69b14aea1627253506c96bb75f6a4b829e1826c7193d0cd78d76f7afcfe899` |
 | GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:1e69b14aea1627253506c96bb75f6a4b829e1826c7193d0cd78d76f7afcfe899` |
 | Supply chain | Cosign OIDC signed + SPDX & CycloneDX SBOM attestations + SLSA Build L3 provenance |
-| Security gate (Trivy + Grype on SBOM) | **0 fixable Critical/High** (33 upstream-unfixed) |
+| Security gate (Trivy + Grype on SBOM) | **0 fixable findings of any severity** (33 upstream-unfixed) |
 <!-- versions:end -->
 
 ---
@@ -247,8 +247,8 @@ gh attestation verify oci://ghcr.io/dgcosenza/synchronet:latest --owner dgcosenz
 
 ## Security
 
-- **Vulnerability scan policy:** Every CI build runs **Trivy** (full table artifact, SARIF upload to GitHub Code Scanning, and blocking `--ignore-unfixed` gate) and **Grype** (`--only-fixed`, severity cutoff `high`, blocking gate), plus generates an **SPDX SBOM** artifact via Syft. Publication is blocked on any fixable `CRITICAL` or `HIGH` finding.
-- **Current status:** **0 fixable Critical/High** vulnerabilities across Debian 13 OS packages and runtime libraries (verified every build; unfixed upstream Debian advisories, if any, are recorded in the `trivy-report` CI artifact and resolved automatically on daily rebuilds once Debian Security publishes fixes).
+- **Vulnerability scan policy (all severities with a fix):** Every CI build runs **Trivy** (full table artifact, SARIF upload to GitHub Code Scanning, and blocking `--ignore-unfixed` gate) and **Grype** (`--only-fixed`, severity cutoff `negligible`, blocking gate), plus generates an **SPDX SBOM** artifact via Syft. Publication is blocked on any fixable finding of any severity.
+- **Current status:** **0 fixable findings of any severity** vulnerabilities across Debian 13 OS packages and runtime libraries (verified every build; unfixed upstream Debian advisories, if any, are recorded in the `trivy-report` CI artifact and resolved automatically on daily rebuilds once Debian Security publishes fixes).
 - **Non-root runtime and capability model:** The BBS runs as non-root `sbbs` (UID/GID `1000`) with `cap_net_bind_service=+ep` on `/sbbs/exec/sbbs`. Because initialization adjusts volume ownership and low-port privileges via `sudo`, **do not** set `security_opt: no-new-privileges:true` on this container.
 - **CA bundle:** Ships the current Debian 13 CA bundle at `/etc/ssl/certs/ca-certificates.crt`.
 - See [`SECURITY.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/SECURITY.md) for reporting guidelines.
@@ -289,7 +289,7 @@ docker buildx build \
 
 1. **Upstream check:** Resolves the latest Synchronet `master` commit from `SynchronetBBS/sbbs`, validates `VERSION`/`REVISION` in `src/sbbs3/sbbsdefs.h`, queries the latest Deno release via the authenticated GitHub API (with official SHA-256 verification), compares against `versions.json`, and writes an `upstream-changes.md` artifact.
 2. **No-cache rebuild:** Rebuilds `linux/amd64` with `--no-cache` on schedule on fully upgraded `debian:trixie-slim` (`apt-get update && apt-get -y upgrade`) and generates an **SPDX SBOM** (`sbom.spdx.json`) and build provenance artifact.
-3. **Vulnerability fix and gate:** Scans with **Trivy** (table, JSON, SARIF upload to Code Scanning, and blocking `--ignore-unfixed` gate) and **Grype** (blocking `--only-fixed` gate, severity cutoff `high`), diffs against the previous scan to report resolved CVEs, and retains scan artifacts for 90 days.
+3. **Vulnerability fix and gate:** Scans with **Trivy** (table, JSON, SARIF upload to Code Scanning, and blocking `--ignore-unfixed` gate) and **Grype** (blocking `--only-fixed` gate, severity cutoff `negligible`), diffs against the previous scan to report resolved CVEs, and retains scan artifacts for 90 days.
 4. **Smoke test:** Executes [`tests/smoke.sh`](https://github.com/dgcosenza/synchronet-docker/blob/main/tests/smoke.sh) to verify fresh `/sbbs-data` initialization, non-root `sbbs` (UID/GID `1000`), `cap_net_bind_service`, HTTP webv4 readiness, and a negative closed-port probe.
 5. **Publish:** On non-PR builds when registry credentials are configured, pushes `nightly`, `latest`, `<version>`, `<version>-<YYYYMMDD>`, `<version>-<commit>-<YYYYMMDD>`, `sha-<short>`, and immutable `<version>-<commit>` tags to Docker Hub and records the digest.
 6. **Automated documentation sync:** Commits updated `versions.json`, the README `Current Versions` block, and a dated `CHANGELOG.md` entry (upstream changes, resolved CVEs, and digest) via `github-actions[bot]` with `[skip ci]` when content changes, then syncs the Docker Hub overview and short description via `peter-evans/dockerhub-description`.
