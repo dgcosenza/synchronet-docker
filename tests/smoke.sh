@@ -31,6 +31,32 @@ test "$GID_ACTUAL" = "1000"
 # Verify cap_net_bind_service capability is set on the sbbs binary.
 docker exec "$NAME" getcap /sbbs/exec/sbbs | grep -q 'cap_net_bind_service'
 
+# A freshly initialized Synchronet database has no users, so webv4's
+# index.xjs (and the image HEALTHCHECK that curls it) reports
+# "Guest account unavailable". Bootstrap the sysop and Guest accounts with
+# the upstream scripts exactly as a real install does, instead of weakening
+# the health probe.
+for _ in $(seq 1 90); do
+  if docker exec "$NAME" test -f /sbbs-data/ctrl/sbbs.ini 2>/dev/null; then
+    break
+  fi
+  sleep 2
+done
+
+USER_COUNT="$(docker exec "$NAME" /sbbs/exec/jsexec -n -r 'writeln(system.stats.total_users)' 2>/dev/null | grep -oE '^[0-9]+' | head -1 || true)"
+if [ -z "${USER_COUNT}" ] || [ "${USER_COUNT}" -eq 0 ]; then
+  # "Sysop" is a well-known sysop alias that matchuser() resolves to user #1
+  # even on an empty database, so makeuser.js rejects it. Use a plain alias.
+  # Upstream makeuser.js also requires -P to define its password variable;
+  # generate a throwaway value at runtime and never print or persist it.
+  echo "Creating initial bootstrap user account"
+  BOOTSTRAP_PASS="$(openssl rand -hex 16)"
+  docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeuser.js Bootstrap -P "$BOOTSTRAP_PASS"
+  unset BOOTSTRAP_PASS
+fi
+echo "Ensuring Guest account exists"
+docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeguest.js
+
 # Wait for the container's Docker HEALTHCHECK to report healthy
 HEALTHY=0
 HEALTH_STATUS="missing"

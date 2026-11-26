@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-ARG DEBIAN_BASE=debian:trixie-slim@sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0
+ARG DEBIAN_BASE=debian:13.8-slim@sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0
 FROM ${DEBIAN_BASE} AS runtime-base
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG TARGETARCH
@@ -129,7 +129,7 @@ LABEL org.opencontainers.image.source="${IMAGE_SOURCE}" \
       org.opencontainers.image.licenses="GPL-2.0-or-later AND MIT" \
       org.opencontainers.image.authors="Daniel G. Cosenza from FNX Labs" \
       org.opencontainers.image.vendor="Daniel G. Cosenza from FNX Labs" \
-      org.opencontainers.image.base.name="debian:trixie-slim" \
+      org.opencontainers.image.base.name="debian:13.8-slim" \
       io.github.dgcosenza.synchronet.upstream_version="${SYNCHRONET_VERSION}" \
       io.github.dgcosenza.synchronet.upstream_commit="${SYNCHRONET_COMMIT}" \
       io.github.dgcosenza.synchronet.deno_version="${DENO_VERSION}" \

@@ -4,7 +4,7 @@ Maintained by **Daniel G. Cosenza from FNX Labs**.
 
 ## Supported Versions
 
-Only the latest daily build of `dgcosenza/synchronet` on Debian 13 (`trixie-slim`) is actively maintained and receives automated security rebuilds.
+Only the latest daily build of `dgcosenza/synchronet` on Debian 13 (`debian:13.8-slim`, pinned by digest and auto-bumped to the newest official point release) is actively maintained and receives automated security rebuilds.
 
 ## Automated Vulnerability Scanning
 
