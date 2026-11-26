@@ -31,6 +31,26 @@ test "$GID_ACTUAL" = "1000"
 # Verify cap_net_bind_service capability is set on the sbbs binary.
 docker exec "$NAME" getcap /sbbs/exec/sbbs | grep -q 'cap_net_bind_service'
 
+# A freshly initialized Synchronet database has no users, so webv4's
+# index.xjs (and the image HEALTHCHECK that curls it) reports
+# "Guest account unavailable". Bootstrap the sysop and Guest accounts with
+# the upstream scripts exactly as a real install does, instead of weakening
+# the health probe.
+for _ in $(seq 1 90); do
+  if docker exec "$NAME" test -f /sbbs-data/ctrl/sbbs.ini 2>/dev/null; then
+    break
+  fi
+  sleep 2
+done
+
+USER_COUNT="$(docker exec "$NAME" /sbbs/exec/jsexec -n -r 'write(system.stats.total_users)' 2>/dev/null | grep -oE '^[0-9]+' | head -1 || true)"
+if [ -z "${USER_COUNT}" ] || [ "${USER_COUNT}" -eq 0 ]; then
+  echo "Creating initial sysop account"
+  docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeuser.js Sysop
+fi
+echo "Ensuring Guest account exists"
+docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeguest.js
+
 # Wait for the container's Docker HEALTHCHECK to report healthy
 HEALTHY=0
 HEALTH_STATUS="missing"

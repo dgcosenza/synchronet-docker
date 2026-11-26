@@ -154,8 +154,14 @@ jobs:
           deno_sha_arm64="$(curl -fsSL "https://github.com/denoland/deno/releases/download/v${deno_version}/deno-aarch64-unknown-linux-gnu.zip.sha256sum" | awk '{print $1}')"
           test "${#deno_sha_amd64}" -eq 64 && test "${#deno_sha_arm64}" -eq 64
 
-          BASE_DIGEST="$(curl -fsSL "https://hub.docker.com/v2/repositories/library/debian/tags/trixie-slim" | jq -r '.digest // empty')"
-          DEBIAN_BASE="debian:trixie-slim"
+          # Discover the newest official Debian 13 point-release slim tag and
+          # pin it by digest. Renovate and this resolve step bump both together.
+          BASE_TAG="$(curl -fsSL 'https://hub.docker.com/v2/repositories/library/debian/tags?page_size=100&name=13.' \
+            | jq -r '.results[].name | select(test("^13\\.[0-9]+-slim$"))' \
+            | sort -V | tail -1 || true)"
+          [ -z "$BASE_TAG" ] && BASE_TAG="13.8-slim"
+          BASE_DIGEST="$(curl -fsSL "https://hub.docker.com/v2/repositories/library/debian/tags/${BASE_TAG}" | jq -r '.digest // empty')"
+          DEBIAN_BASE="debian:${BASE_TAG}"
           [ -n "$BASE_DIGEST" ] && DEBIAN_BASE="${DEBIAN_BASE}@${BASE_DIGEST}"
 
           short_sha="$(printf '%s' "$commit" | cut -c1-7)"
@@ -166,6 +172,7 @@ jobs:
           prev_commit="$(jq -r '.upstream_commit // empty' versions.json 2>/dev/null || true)"
           prev_deno="$(jq -r '.components.Deno // empty' versions.json 2>/dev/null || true)"
           prev_base="$(jq -r '.base_digest // empty' versions.json 2>/dev/null || true)"
+          prev_base_image="$(jq -r '.base_image // empty' versions.json 2>/dev/null || true)"
 
           {
             echo "# Upstream Changes (${BUILD_DATE_ISO})"
@@ -181,8 +188,11 @@ jobs:
             if [ -n "$prev_deno" ] && [ "$prev_deno" != "$deno_version" ]; then
               echo "- Deno updated from ${prev_deno} to ${deno_version}."
             fi
+            if [ -n "$prev_base_image" ] && [ "$prev_base_image" != "debian:${BASE_TAG}" ]; then
+              echo "- Debian base tag advanced from ${prev_base_image} to debian:${BASE_TAG}."
+            fi
             if [ -n "$BASE_DIGEST" ] && [ -n "$prev_base" ] && [ "$BASE_DIGEST" != "$prev_base" ]; then
-              echo "- Refreshed debian:trixie-slim base image digest."
+              echo "- Refreshed debian:${BASE_TAG} base image digest."
             fi
           } > upstream-changes.md
 
@@ -624,7 +634,7 @@ jobs:
 
           ### Verified Components
           - **Upstream:** \`SynchronetBBS/sbbs\` \`${VER}\` (\`GPL-2.0-or-later\`)
-          - **Base OS:** Debian \`${DEBIAN_VER}\` (\`trixie-slim\`)
+          - **Base OS:** Debian \`${DEBIAN_VER}\` (\`debian:${DEBIAN_VER}-slim\`)
           - **Architecture:** \`linux/amd64\` (${AMD64_MB} MB) — \`linux/arm64\` unsupported upstream due to SpiderMonkey \`personality(ADDR_COMPAT_LAYOUT)\`
           - **Security gate:** 0 fixable findings of any severity (Trivy + Grype on SPDX SBOM), Dive efficiency >= 95%
 
@@ -717,9 +727,9 @@ jobs:
               components: {
                 "Synchronet BBS": ($upstream_version + " (" + $short_sha + ")"),
                 "Deno": $deno_version,
-                "Base OS": ("Debian " + $debian_version + " (trixie-slim)")
+                "Base OS": ("Debian " + $debian_version + " (debian:" + $debian_version + "-slim)")
               },
-              base_image: "debian:trixie-slim",
+              base_image: ("debian:" + $debian_version + "-slim"),
               base_digest: $base_digest,
               debian_version: $debian_version,
               build_date: $build_date,

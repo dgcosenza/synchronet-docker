@@ -5,6 +5,16 @@ All notable changes to the `dgcosenza/synchronet` Debian 13 container packaging 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Maintained by **Daniel G. Cosenza from FNX Labs**.
 
 ---
+
+## [Unreleased]
+
+### Fixed
+- CI smoke test now bootstraps the initial sysop and Guest accounts with the upstream `makeuser.js` / `makeguest.js` scripts before waiting for Docker `status=healthy`, so a fresh data volume can pass the real webv4 healthcheck.
+- Added a single path-scoped Trivy secret-scanning allow rule for an upstream binary demo pixmap that matched a SendGrid token regex. All other secret rules and the all-severity fixable-vulnerability gate remain enabled.
+
+### Changed
+- Base image pin is now the numeric official tag `debian:13.8-slim@sha256:8aa5a7bf…`; the daily resolve step discovers and pins the newest Debian 13 point-release slim tag and digest automatically.
+
 <!-- changelog:auto -->
 
 ## [3.22a-335365b] — 2026-11-25

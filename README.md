@@ -23,7 +23,7 @@ A source-built, actively maintained container image for **Synchronet BBS** on **
 
 ## Overview
 
-This repository builds and maintains a source-built **Synchronet BBS** container on **Debian 13 (trixie)** (`debian:trixie-slim`, latest Debian 13 point release — 13.8 as of 2026-11-24). Every CI build resolves the current upstream Synchronet `master` commit, validates the version header (`sbbsdefs.h`), upgrades all Debian packages (`apt-get update && apt-get -y upgrade`), installs the latest SHA-256-verified **Deno** release, runs a container smoke test, and gates publication on **0 fixable findings of any severity vulnerabilities** in both **Trivy** and **Grype**.
+This repository builds and maintains a source-built **Synchronet BBS** container on **Debian 13 (trixie)** (`debian:13.8-slim`, pinned by digest). The daily resolve step discovers the newest official Debian 13 point-release slim tag and bumps the tag and digest together, so the base stays current automatically. Every CI build resolves the current upstream Synchronet `master` commit, validates the version header (`sbbsdefs.h`), upgrades all Debian packages (`apt-get update && apt-get -y upgrade`), installs the latest SHA-256-verified **Deno** release, runs a container smoke test, and gates publication on **0 fixable findings of any severity vulnerabilities** in both **Trivy** and **Grype**.
 
 Synchronet is developed at [gitlab.synchro.net/main/sbbs](https://gitlab.synchro.net/main/sbbs). The build fetches the exact commit from the maintained [SynchronetBBS GitHub mirror](https://github.com/SynchronetBBS/sbbs) because unauthenticated GitLab smart-HTTP refs are not consistently available to automated container builders. The packaging modernizes the Debian 11 `bbsio/synchronet` recipe; it is independently maintained and is not an official Synchronet or BBS-IO image.
 
@@ -38,7 +38,7 @@ The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchro
 | --- | --- |
 | Synchronet BBS | `3.22a (335365b)` |
 | Deno | `2.9.8` |
-| Base OS | `Debian 13.8 (trixie-slim)` |
+| Base OS | `Debian 13.8 (debian:13.8-slim)` |
 | Architectures | `linux/amd64` |
 | Uncompressed size (per arch) | `amd64: 136.0 MB` |
 | Last verified build (UTC) | `2026-11-25` |
@@ -197,6 +197,8 @@ HEALTHCHECK --interval=120s --timeout=10s --start-period=120s --retries=3 \
 
 The healthcheck probes Synchronet's internal `webv4` HTTP listener on `http://127.0.0.1/` every 120 seconds (avoiding excessive guest login/logout log noise from shorter intervals) and treats HTTP `2xx`/`3xx` as healthy.
 
+On a **fresh** `/sbbs-data` volume, `webv4/index.xjs` requires a Guest account before it can serve the index. The CI smoke test bootstraps the initial sysop and Guest accounts with the upstream `makeuser.js` / `makeguest.js` scripts before waiting for `status=healthy`, exactly as a real install does. Existing volumes with a Guest account are untouched.
+
 ---
 
 ## Upgrading and Migrating from `bbsio/synchronet`
@@ -251,6 +253,7 @@ gh attestation verify oci://ghcr.io/dgcosenza/synchronet:latest --owner dgcosenz
 - **Current status:** **0 fixable findings of any severity** vulnerabilities across Debian 13 OS packages and runtime libraries (verified every build; unfixed upstream Debian advisories, if any, are recorded in the `trivy-report` CI artifact and resolved automatically on daily rebuilds once Debian Security publishes fixes).
 - **Non-root runtime and capability model:** The BBS runs as non-root `sbbs` (UID/GID `1000`) with `cap_net_bind_service=+ep` on `/sbbs/exec/sbbs`. Because initialization adjusts volume ownership and low-port privileges via `sudo`, **do not** set `security_opt: no-new-privileges:true` on this container.
 - **CA bundle:** Ships the current Debian 13 CA bundle at `/etc/ssl/certs/ca-certificates.crt`.
+- **Secret-scanning false-positive allowance:** Trivy's secret scanner stays enabled on every build. `trivy-secret.yaml` contains a single path-scoped allow rule for one upstream binary demo pixmap (`dist/xtrn/univiewer/demo/univiewer_demo.ppm`) whose raw pixel bytes match a SendGrid token regex. No credential is present; no other rule or file is exempted, and the all-severity fixable-vulnerability gate is unchanged.
 - See [`SECURITY.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/SECURITY.md) for reporting guidelines.
 
 ---
@@ -272,7 +275,7 @@ docker buildx build \
 
 | Build Arg | Default | Purpose |
 | --- | --- | --- |
-| `DEBIAN_BASE` | `debian:trixie-slim` | Base OS image. |
+| `DEBIAN_BASE` | `debian:13.8-slim` (pinned by digest) | Base OS image; CI resolves the newest official Debian 13 point release. |
 | `SYNCHRONET_COMMIT` | `c20f7377662025b629978cfeade8563a6a7ac97e` | Pinned upstream Synchronet commit (overridden daily by CI). |
 | `SYNCHRONET_VERSION` | `3.22a` | Expected version validated against `sbbsdefs.h`. |
 | `DENO_VERSION` | `2.9.8` | Official Deno release used by the init script (overridden daily by CI). |
@@ -288,7 +291,7 @@ docker buildx build \
 [`.github/workflows/daily.yml`](https://github.com/dgcosenza/synchronet-docker/blob/main/.github/workflows/daily.yml) runs automatically every day at **04:45 UTC**, on pushes to `main`, on pull requests (verification only, without pushing), and via `workflow_dispatch`. Every scheduled run executes a seven-step automated pipeline (gated by `.github/workflows/public-check.yml`):
 
 1. **Upstream check:** Resolves the latest Synchronet `master` commit from `SynchronetBBS/sbbs`, validates `VERSION`/`REVISION` in `src/sbbs3/sbbsdefs.h`, queries the latest Deno release via the authenticated GitHub API (with official SHA-256 verification), compares against `versions.json`, and writes an `upstream-changes.md` artifact.
-2. **No-cache rebuild:** Rebuilds `linux/amd64` with `--no-cache` on schedule on fully upgraded `debian:trixie-slim` (`apt-get update && apt-get -y upgrade`) and generates an **SPDX SBOM** (`sbom.spdx.json`) and build provenance artifact.
+2. **No-cache rebuild:** Rebuilds `linux/amd64` with `--no-cache` on schedule on the fully upgraded current Debian 13 slim base (`apt-get update && apt-get -y upgrade`) and generates an **SPDX SBOM** (`sbom.spdx.json`) and build provenance artifact.
 3. **Vulnerability fix and gate:** Scans with **Trivy** (table, JSON, SARIF upload to Code Scanning, and blocking `--ignore-unfixed` gate) and **Grype** (blocking `--only-fixed` gate, severity cutoff `negligible`), diffs against the previous scan to report resolved CVEs, and retains scan artifacts for 90 days.
 4. **Smoke test:** Executes [`tests/smoke.sh`](https://github.com/dgcosenza/synchronet-docker/blob/main/tests/smoke.sh) to verify fresh `/sbbs-data` initialization, non-root `sbbs` (UID/GID `1000`), `cap_net_bind_service`, HTTP webv4 readiness, and a negative closed-port probe.
 5. **Publish:** On non-PR builds when registry credentials are configured, pushes `nightly`, `latest`, `<version>`, `<version>-<YYYYMMDD>`, `<version>-<commit>-<YYYYMMDD>`, `sha-<short>`, and immutable `<version>-<commit>` tags to Docker Hub and records the digest.
@@ -299,7 +302,7 @@ docker buildx build \
 
 ## Design Decisions
 
-- **Debian 13 (`trixie-slim`) multi-stage build:** Synchronet compiles C/C++ components (including vendored cryptlib and SpiderMonkey) cleanly against current Debian 13 glibc and OpenSSL 3. Compilers and `-dev` headers stay strictly in the `build` stage and are excluded from the `runtime` image.
+- **Debian 13 (`debian:13.8-slim`) multi-stage build:** Synchronet compiles C/C++ components (including vendored cryptlib and SpiderMonkey) cleanly against current Debian 13 glibc and OpenSSL 3. Compilers and `-dev` headers stay strictly in the `build` stage and are excluded from the `runtime` image.
 - **Checksum-verified Deno runtime:** Kept solely for drop-in compatibility with the `bbs-io/synchronet-docker` `/sbbs-data` initialization logic (`init.ts`), verified against the official release SHA-256 on every build.
 - **120-second healthcheck interval:** Synchronet records a guest login/logout session for every HTTP probe; 120 seconds keeps liveness detection responsive without flooding BBS logs.
 - **No `no-new-privileges`:** Required because `sbbs-init` reconciles `/sbbs-data` ownership and `sbbs` uses `cap_net_bind_service` to bind classic BBS ports below 1024.
