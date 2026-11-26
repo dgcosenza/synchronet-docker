@@ -47,8 +47,12 @@ USER_COUNT="$(docker exec "$NAME" /sbbs/exec/jsexec -n -r 'writeln(system.stats.
 if [ -z "${USER_COUNT}" ] || [ "${USER_COUNT}" -eq 0 ]; then
   # "Sysop" is a well-known sysop alias that matchuser() resolves to user #1
   # even on an empty database, so makeuser.js rejects it. Use a plain alias.
+  # Upstream makeuser.js also requires -P to define its password variable;
+  # generate a throwaway value at runtime and never print or persist it.
   echo "Creating initial bootstrap user account"
-  docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeuser.js Bootstrap
+  BOOTSTRAP_PASS="$(openssl rand -hex 16)"
+  docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeuser.js Bootstrap -P "$BOOTSTRAP_PASS"
+  unset BOOTSTRAP_PASS
 fi
 echo "Ensuring Guest account exists"
 docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeguest.js
