@@ -36,16 +36,20 @@ The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchro
 <!-- versions:start -->
 | Component | Resolved Version |
 | --- | --- |
-| Synchronet BBS | `3.22a (9f50744)` |
+| Synchronet BBS | `3.22a (48bfa23)` |
 | Deno | `2.9.8` |
 | Base OS | `Debian 13.8 (debian:13.8-slim)` |
 | Architectures | `linux/amd64` |
 | Uncompressed size (per arch) | `amd64: 136.0 MB` |
 | Last verified build (UTC) | `2026-11-26` |
-| Published multi-arch digest | `dgcosenza/synchronet@sha256:607cc542dd8d3388080323626c81777e101a69b2736222d97715b4d6e90d88b5` |
-| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:607cc542dd8d3388080323626c81777e101a69b2736222d97715b4d6e90d88b5` |
+| Published multi-arch digest | `dgcosenza/synchronet@sha256:360d884674a1f08b44866d3fb7687a443002c9c780da72984ba6e1f743f8336e` |
+| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:360d884674a1f08b44866d3fb7687a443002c9c780da72984ba6e1f743f8336e` |
 | Supply chain | Cosign OIDC signed + SPDX & CycloneDX SBOM attestations + SLSA Build L3 provenance |
 | Security gate (Trivy + Grype on SBOM) | **0 fixable findings of any severity** (33 upstream-unfixed) |
+
+**Recent upstream changes:**
+- Synchronet master advanced from 9f50744 to 48bfa23.
+- 48bfa23: Apply SGR intensity before reversing foreground and background
 <!-- versions:end -->
 
 ---
