@@ -36,16 +36,23 @@ The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchro
 <!-- versions:start -->
 | Component | Resolved Version |
 | --- | --- |
-| Synchronet BBS | `3.22a (335365b)` |
+| Synchronet BBS | `3.22a (9f50744)` |
 | Deno | `2.9.8` |
 | Base OS | `Debian 13.8 (debian:13.8-slim)` |
 | Architectures | `linux/amd64` |
 | Uncompressed size (per arch) | `amd64: 136.0 MB` |
-| Last verified build (UTC) | `2026-11-25` |
-| Published multi-arch digest | `dgcosenza/synchronet@sha256:1e69b14aea1627253506c96bb75f6a4b829e1826c7193d0cd78d76f7afcfe899` |
-| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:1e69b14aea1627253506c96bb75f6a4b829e1826c7193d0cd78d76f7afcfe899` |
+| Last verified build (UTC) | `2026-11-26` |
+| Published multi-arch digest | `dgcosenza/synchronet@sha256:df851e51f5ec32b9b48ff1642c9e799340061a7e93a04d87d2054f65b59b86ea` |
+| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:df851e51f5ec32b9b48ff1642c9e799340061a7e93a04d87d2054f65b59b86ea` |
 | Supply chain | Cosign OIDC signed + SPDX & CycloneDX SBOM attestations + SLSA Build L3 provenance |
 | Security gate (Trivy + Grype on SBOM) | **0 fixable findings of any severity** (33 upstream-unfixed) |
+
+**Recent upstream changes:**
+- Synchronet master advanced from 335365b to 9f50744.
+- 202d83f: syncrpg: don't let Doxygen or asciidoctor break the configure
+- e7530f0: CI: retry failed checkouts, and skip merge request pipelines
+- 39a463f: knkgen: rename canonicalize() to avoid C23 <math.h> conflict
+- 6bb8bd0: v322_new: note install-xtrn.js viewer/tester/extractor/compressor support
 <!-- versions:end -->
 
 ---

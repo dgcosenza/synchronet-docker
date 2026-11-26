@@ -17,6 +17,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Mai
 
 <!-- changelog:auto -->
 
+## [3.22a-9f50744] — 2026-11-26
+
+### Automated Daily Build
+- Verified components: Synchronet BBS `3.22a (9f50744)`, Deno `2.9.8`, Base OS `Debian 13.8 (debian:13.8-slim)`.
+- Architectures verified: `linux/amd64` (native smoke tests + Dive efficiency gate).
+- Upstream changes:
+  - Synchronet master advanced from 335365b to 9f50744.
+  - 202d83f: syncrpg: don't let Doxygen or asciidoctor break the configure
+  - e7530f0: CI: retry failed checkouts, and skip merge request pipelines
+  - 39a463f: knkgen: rename canonicalize() to avoid C23 <math.h> conflict
+  - 6bb8bd0: v322_new: note install-xtrn.js viewer/tester/extractor/compressor support
+- Vulnerability gate: **0 fixable findings of any severity** in Trivy and Grype (SBOM scan) (33 upstream-unfixed).
+- Published multi-arch digest (Docker Hub + GHCR): `dgcosenza/synchronet@sha256:df851e51f5ec32b9b48ff1642c9e799340061a7e93a04d87d2054f65b59b86ea` (Cosign OIDC signed + SPDX/CycloneDX SBOM + SLSA L3 provenance).
+
+---
+
 ## [3.22a-335365b] — 2026-11-25
 
 ### Automated Daily Build
