@@ -22,11 +22,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Mai
 ### Automated Daily Build
 - Verified components: Synchronet BBS `3.22a (48bfa23)`, Deno `2.9.8`, Base OS `Debian 13.8 (debian:13.8-slim)`.
 - Architectures verified: `linux/amd64` (native smoke tests + Dive efficiency gate).
-- Upstream changes:
-  - Synchronet master advanced from 9f50744 to 48bfa23.
-  - 48bfa23: Apply SGR intensity before reversing foreground and background
+- Upstream status: no new upstream release since previous build; refreshed base OS and dependencies.
 - Vulnerability gate: **0 fixable findings of any severity** in Trivy and Grype (SBOM scan) (33 upstream-unfixed).
-- Published multi-arch digest (Docker Hub + GHCR): `dgcosenza/synchronet@sha256:360d884674a1f08b44866d3fb7687a443002c9c780da72984ba6e1f743f8336e` (Cosign OIDC signed + SPDX/CycloneDX SBOM + SLSA L3 provenance).
+- Published multi-arch digest (Docker Hub + GHCR): `dgcosenza/synchronet@sha256:438aa8add0f9cb743e301316cf6f3339fee1e5416e06cf6928df7c9275870a57` (Cosign OIDC signed + SPDX/CycloneDX SBOM + SLSA L3 provenance).
 ---
 
 ## [3.22a-335365b] — 2026-11-25

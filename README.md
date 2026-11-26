@@ -42,14 +42,10 @@ The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchro
 | Architectures | `linux/amd64` |
 | Uncompressed size (per arch) | `amd64: 136.0 MB` |
 | Last verified build (UTC) | `2026-11-26` |
-| Published multi-arch digest | `dgcosenza/synchronet@sha256:360d884674a1f08b44866d3fb7687a443002c9c780da72984ba6e1f743f8336e` |
-| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:360d884674a1f08b44866d3fb7687a443002c9c780da72984ba6e1f743f8336e` |
+| Published multi-arch digest | `dgcosenza/synchronet@sha256:438aa8add0f9cb743e301316cf6f3339fee1e5416e06cf6928df7c9275870a57` |
+| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:438aa8add0f9cb743e301316cf6f3339fee1e5416e06cf6928df7c9275870a57` |
 | Supply chain | Cosign OIDC signed + SPDX & CycloneDX SBOM attestations + SLSA Build L3 provenance |
 | Security gate (Trivy + Grype on SBOM) | **0 fixable findings of any severity** (33 upstream-unfixed) |
-
-**Recent upstream changes:**
-- Synchronet master advanced from 9f50744 to 48bfa23.
-- 48bfa23: Apply SGR intensity before reversing foreground and background
 <!-- versions:end -->
 
 ---
