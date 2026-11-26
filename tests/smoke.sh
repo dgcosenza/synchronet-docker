@@ -43,10 +43,12 @@ for _ in $(seq 1 90); do
   sleep 2
 done
 
-USER_COUNT="$(docker exec "$NAME" /sbbs/exec/jsexec -n -r 'write(system.stats.total_users)' 2>/dev/null | grep -oE '^[0-9]+' | head -1 || true)"
+USER_COUNT="$(docker exec "$NAME" /sbbs/exec/jsexec -n -r 'writeln(system.stats.total_users)' 2>/dev/null | grep -oE '^[0-9]+' | head -1 || true)"
 if [ -z "${USER_COUNT}" ] || [ "${USER_COUNT}" -eq 0 ]; then
-  echo "Creating initial sysop account"
-  docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeuser.js Sysop
+  # "Sysop" is a well-known sysop alias that matchuser() resolves to user #1
+  # even on an empty database, so makeuser.js rejects it. Use a plain alias.
+  echo "Creating initial bootstrap user account"
+  docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeuser.js Bootstrap
 fi
 echo "Ensuring Guest account exists"
 docker exec "$NAME" /sbbs/exec/jsexec -n /sbbs/exec/makeguest.js

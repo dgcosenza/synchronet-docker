@@ -9,7 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Mai
 ## [Unreleased]
 
 ### Fixed
-- CI smoke test now bootstraps the initial sysop and Guest accounts with the upstream `makeuser.js` / `makeguest.js` scripts before waiting for Docker `status=healthy`, so a fresh data volume can pass the real webv4 healthcheck.
+- CI smoke test now bootstraps an initial user and the Guest account with the upstream `makeuser.js` / `makeguest.js` scripts before waiting for Docker `status=healthy`, so a fresh data volume can pass the real webv4 healthcheck.
 - Added a single path-scoped Trivy secret-scanning allow rule for an upstream binary demo pixmap that matched a SendGrid token regex. All other secret rules and the all-severity fixable-vulnerability gate remain enabled.
 
 ### Changed
