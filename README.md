@@ -1,16 +1,33 @@
 # Synchronet BBS for Debian 13 (trixie)
 
-[![Daily Synchronet image](https://github.com/dgcosenza/synchronet-docker/actions/workflows/daily.yml/badge.svg)](https://github.com/dgcosenza/synchronet-docker/actions/workflows/daily.yml)
-[![Packaging License: MIT](https://img.shields.io/badge/packaging-MIT-blue.svg)](https://github.com/dgcosenza/synchronet-docker/blob/main/LICENSE)
-[![Upstream License: GPL-2.0-or-later](https://img.shields.io/badge/upstream-GPL--2.0--or--later-green.svg)](https://www.synchro.net/copyright.html)
-[![Signed with Cosign](https://img.shields.io/badge/signed-cosign%20OIDC-blueviolet.svg)](#supply-chain-verification)
-[![SLSA Level 3](https://img.shields.io/badge/SLSA-Level%203-brightgreen.svg)](#supply-chain-verification)
-[![Architectures](https://img.shields.io/badge/arch-amd64-informational.svg)](#supported-architectures)
+[![Daily CI](https://github.com/dgcosenza/synchronet-docker/actions/workflows/daily.yml/badge.svg)](https://github.com/dgcosenza/synchronet-docker/actions/workflows/daily.yml)
+[![OpenSSF Scorecard Workflow](https://github.com/dgcosenza/synchronet-docker/actions/workflows/scorecard.yml/badge.svg)](https://github.com/dgcosenza/synchronet-docker/actions/workflows/scorecard.yml)
+[![Gitleaks Secret Scan](https://github.com/dgcosenza/synchronet-docker/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/dgcosenza/synchronet-docker/actions/workflows/gitleaks.yml)
+[![Public Content Check](https://github.com/dgcosenza/synchronet-docker/actions/workflows/public-check.yml/badge.svg)](https://github.com/dgcosenza/synchronet-docker/actions/workflows/public-check.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/dgcosenza/synchronet-docker/badge)](https://scorecard.dev/viewer/?uri=github.com/dgcosenza/synchronet-docker)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/17173/badge)](https://www.bestpractices.dev/projects/17173)
-[![Docker Pulls](https://img.shields.io/docker/pulls/dgcosenza/synchronet)](https://hub.docker.com/r/dgcosenza/synchronet)
-[![Docker Image Size](https://img.shields.io/docker/image-size/dgcosenza/synchronet/latest)](https://hub.docker.com/r/dgcosenza/synchronet)
-[![Latest Release](https://img.shields.io/github/v/release/dgcosenza/synchronet-docker?label=version)](https://github.com/dgcosenza/synchronet-docker/releases)
+
+[![Trivy + Grype: 0 Fixable CVEs](https://img.shields.io/badge/Trivy%20%2B%20Grype-0%20fixable%20CVEs-brightgreen?logo=trivy&logoColor=white)](https://github.com/dgcosenza/synchronet-docker/security/code-scanning)
+[![Signed: Cosign OIDC](https://img.shields.io/badge/signed-Cosign%20OIDC-blueviolet)](https://github.com/dgcosenza/synchronet-docker#supply-chain-verification)
+[![SLSA Build L3](https://img.shields.io/badge/SLSA-Build%20L3-brightgreen)](https://github.com/dgcosenza/synchronet-docker/attestations)
+[![SBOM: SPDX + CycloneDX](https://img.shields.io/badge/SBOM-SPDX%20%2B%20CycloneDX-0A7BBB?logo=spdx&logoColor=white)](https://github.com/dgcosenza/synchronet-docker/releases/latest)
+[![Base OS](https://img.shields.io/badge/base-Debian%2013%20(trixie--slim)-A81D33?logo=debian&logoColor=white)](https://github.com/dgcosenza/synchronet-docker/blob/main/Dockerfile)
+[![Architectures](https://img.shields.io/badge/arch-amd64-007ec6?logo=linux&logoColor=white)](https://github.com/dgcosenza/synchronet-docker#supported-architectures)
+[![Healthcheck: CI Verified](https://img.shields.io/badge/healthcheck-CI%20verified-brightgreen?logo=docker&logoColor=white)](https://github.com/dgcosenza/synchronet-docker#healthcheck)
+[![Renovate Enabled](https://img.shields.io/badge/renovate-enabled-1A1F6C?logo=renovate&logoColor=white)](https://github.com/dgcosenza/synchronet-docker/blob/main/renovate.json)
+[![Dependabot Enabled](https://img.shields.io/badge/dependabot-enabled-025E8C?logo=dependabot&logoColor=white)](https://github.com/dgcosenza/synchronet-docker/blob/main/.github/dependabot.yml)
+[![Daily Rebuilds](https://img.shields.io/badge/rebuilds-daily-2088FF?logo=githubactions&logoColor=white)](https://github.com/dgcosenza/synchronet-docker/actions/workflows/daily.yml)
+
+[![Latest Release](https://img.shields.io/github/v/release/dgcosenza/synchronet-docker?label=version&logo=github)](https://github.com/dgcosenza/synchronet-docker/releases/latest)
+[![Release Date](https://img.shields.io/github/release-date/dgcosenza/synchronet-docker?label=released&logo=github)](https://github.com/dgcosenza/synchronet-docker/releases/latest)
+[![Last Commit](https://img.shields.io/github/last-commit/dgcosenza/synchronet-docker?logo=github)](https://github.com/dgcosenza/synchronet-docker/commits/main)
+[![Docker Pulls](https://img.shields.io/docker/pulls/dgcosenza/synchronet?logo=docker&logoColor=white)](https://hub.docker.com/r/dgcosenza/synchronet)
+[![Docker Image Size](https://img.shields.io/docker/image-size/dgcosenza/synchronet/latest?logo=docker&logoColor=white)](https://hub.docker.com/r/dgcosenza/synchronet)
+[![Registries: Docker Hub + GHCR](https://img.shields.io/badge/registries-Docker%20Hub%20%2B%20GHCR-2496ED?logo=docker&logoColor=white)](https://github.com/dgcosenza/synchronet-docker/pkgs/container/synchronet)
+[![Packaging License: MIT](https://img.shields.io/badge/packaging-MIT-blue?logo=opensourceinitiative&logoColor=white)](https://github.com/dgcosenza/synchronet-docker/blob/main/LICENSE)
+[![Upstream License](https://img.shields.io/badge/upstream-GPL--2.0--or--later-green?logo=opensourceinitiative&logoColor=white)](https://www.synchro.net/copyright.html)
+[![GitHub Issues](https://img.shields.io/github/issues/dgcosenza/synchronet-docker?logo=github)](https://github.com/dgcosenza/synchronet-docker/issues)
+[![FNX Labs Catalog](https://img.shields.io/badge/catalog-FNX%20Labs-0b1020?logo=githubpages&logoColor=white)](https://dgcosenza.github.io/)
 
 A source-built, actively maintained container image for **Synchronet BBS** on **Debian 13 (trixie)**, maintained by **Daniel G. Cosenza from FNX Labs**.
 
@@ -20,17 +37,15 @@ A source-built, actively maintained container image for **Synchronet BBS** on **
 - **Upstream Application:** [`SynchronetBBS/sbbs`](https://github.com/SynchronetBBS/sbbs) (mirror of [`gitlab.synchro.net/main/sbbs`](https://gitlab.synchro.net/main/sbbs))
 - **License:** Packaging MIT; Synchronet GPL/LGPL (see [`THIRD-PARTY-NOTICES.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/THIRD-PARTY-NOTICES.md))
 
----
 
 ## Overview
 
-This repository builds and maintains a source-built **Synchronet BBS** container on **Debian 13 (trixie)** (`debian:13.8-slim`, pinned by digest). The daily resolve step discovers the newest official Debian 13 point-release slim tag and bumps the tag and digest together, so the base stays current automatically. Every CI build resolves the current upstream Synchronet `master` commit, validates the version header (`sbbsdefs.h`), upgrades all Debian packages (`apt-get update && apt-get -y upgrade`), installs the latest SHA-256-verified **Deno** release, runs a container smoke test, and gates publication on **0 fixable findings of any severity vulnerabilities** in both **Trivy** and **Grype**.
+This repository builds and maintains a source-built **Synchronet BBS** container on **Debian 13 (trixie)** (`debian:13.8-slim`, pinned by digest). The daily resolve step discovers the newest official Debian 13 point-release slim tag and bumps the tag and digest together, so the base stays current automatically. Every CI build resolves the current upstream Synchronet `master` commit, validates the version header (`sbbsdefs.h`), upgrades all Debian packages (`apt-get update && apt-get -y upgrade`), installs the latest SHA-256-verified **Deno** release, runs a container smoke test, and gates publication on **0 fixable vulnerabilities of any severity** in both **Trivy** and **Grype**.
 
 Synchronet is developed at [gitlab.synchro.net/main/sbbs](https://gitlab.synchro.net/main/sbbs). The build fetches the exact commit from the maintained [SynchronetBBS GitHub mirror](https://github.com/SynchronetBBS/sbbs) because unauthenticated GitLab smart-HTTP refs are not consistently available to automated container builders. The packaging modernizes the Debian 11 `bbsio/synchronet` recipe; it is independently maintained and is not an official Synchronet or BBS-IO image.
 
 The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchronet`. Test upgrades on a cold copy of your data directory first.
 
----
 
 ## Current Versions
 
@@ -49,7 +64,6 @@ The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchro
 | Security gate (Trivy + Grype on SBOM) | **0 fixable findings of any severity** (33 upstream-unfixed) |
 <!-- versions:end -->
 
----
 
 ## Supported Tags
 
@@ -71,7 +85,6 @@ Each published image records the exact Synchronet version, upstream commit SHA, 
 image: dgcosenza/synchronet:latest@sha256:<digest>
 ```
 
----
 
 ## Supported Architectures
 
@@ -81,7 +94,6 @@ image: dgcosenza/synchronet:latest@sha256:<digest>
 | `linux/arm64` | **Not supported (upstream limitation)** | Synchronet's embedded SpiderMonkey 1.8.5 runtime registers an `aarch64` Linux constructor (`src/sbbs3/js_global.cpp`, `addr_compat_layout_hack`) that calls `personality(ADDR_COMPAT_LAYOUT)` and aborts with `Operation not permitted` under default container seccomp profiles (upstream `bbsio/synchronet` is likewise `amd64`-only). |
 
 Identical signed OCI digests are published to **Docker Hub** and **GHCR** (`ghcr.io/dgcosenza/synchronet`), accompanied by automated signed [GitHub Releases](https://github.com/dgcosenza/synchronet-docker/releases).
----
 
 ## Quick Start
 
@@ -141,7 +153,6 @@ services:
 
 Start with `docker compose up -d` and inspect with `docker compose ps` and `docker compose logs --tail=100 bbs`.
 
----
 
 ## Configuration
 
@@ -187,7 +198,6 @@ Ports listen inside the container only when enabled in `ctrl/services.ini` and `
 
 Block plaintext protocols from untrusted networks using a host firewall (for example, `DOCKER-USER` iptables/nftables rules) before publishing ports.
 
----
 
 ## Healthcheck
 
@@ -200,7 +210,6 @@ The healthcheck probes Synchronet's internal `webv4` HTTP listener on `http://12
 
 On a **fresh** `/sbbs-data` volume, `webv4/index.xjs` requires a Guest account before it can serve the index. The CI smoke test waits for webv4 to accept requests (so initialization is complete), then bootstraps an initial user and the Guest account with the upstream `makeuser.js` / `makeguest.js` scripts before waiting for `status=healthy`, exactly as a real install does. Existing volumes with a Guest account are untouched.
 
----
 
 ## Upgrading and Migrating from `bbsio/synchronet`
 
@@ -213,7 +222,6 @@ This image preserves the `/sbbs-data` layout for the Synchronet `3.22a` data lin
 3. Verify healthcheck status, startup logs, enabled protocols, and idle CPU.
 4. Pin the reviewed image digest in Compose (`dgcosenza/synchronet:latest@sha256:<digest>`), recreate the service, and keep the previous image tag and backup for rollback.
 
----
 
 ## Supply-Chain Verification
 
@@ -227,11 +235,7 @@ cosign verify \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
   ghcr.io/dgcosenza/synchronet:latest
 
-# Or against Docker Hub (identical digest):
-cosign verify \
-  --certificate-identity-regexp="^https://github\.com/dgcosenza/synchronet-docker/\.github/workflows/daily\.yml@refs/heads/main$" \
-  --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
-  dgcosenza/synchronet:latest
+# Identical digest on Docker Hub: replace ghcr.io/dgcosenza/synchronet:latest with dgcosenza/synchronet:latest
 ```
 
 ### Verify SPDX / CycloneDX SBOM attestations and SLSA Build Provenance
@@ -246,7 +250,6 @@ cosign verify-attestation \
 gh attestation verify oci://ghcr.io/dgcosenza/synchronet:latest --owner dgcosenza
 ```
 
----
 
 ## Security
 
@@ -257,7 +260,6 @@ gh attestation verify oci://ghcr.io/dgcosenza/synchronet:latest --owner dgcosenz
 - **Secret-scanning false-positive allowance:** Trivy's secret scanner stays enabled on every build. `trivy-secret.yaml` contains a single path-scoped allow rule for one upstream binary demo pixmap (`dist/xtrn/univiewer/demo/univiewer_demo.ppm`) whose raw pixel bytes match a SendGrid token regex. No credential is present; no other rule or file is exempted, and the all-severity fixable-vulnerability gate is unchanged.
 - See [`SECURITY.md`](https://github.com/dgcosenza/synchronet-docker/blob/main/SECURITY.md) for reporting guidelines.
 
----
 
 ## Build Locally
 
@@ -285,21 +287,16 @@ docker buildx build \
 | `IMAGE_REVISION` | `""` | Packaging repository Git SHA. |
 | `IMAGE_SOURCE` | `https://github.com/dgcosenza/synchronet-docker` | Source URL for OCI labels. |
 
----
 
 ## Update Policy
 
 [`.github/workflows/daily.yml`](https://github.com/dgcosenza/synchronet-docker/blob/main/.github/workflows/daily.yml) runs automatically every day at **04:45 UTC**, on pushes to `main`, on pull requests (verification only, without pushing), and via `workflow_dispatch`. Every scheduled run executes a seven-step automated pipeline (gated by `.github/workflows/public-check.yml`):
 
-1. **Upstream check:** Resolves the latest Synchronet `master` commit from `SynchronetBBS/sbbs`, validates `VERSION`/`REVISION` in `src/sbbs3/sbbsdefs.h`, queries the latest Deno release via the authenticated GitHub API (with official SHA-256 verification), compares against `versions.json`, and writes an `upstream-changes.md` artifact.
-2. **No-cache rebuild:** Rebuilds `linux/amd64` with `--no-cache` on schedule on the fully upgraded current Debian 13 slim base (`apt-get update && apt-get -y upgrade`) and generates an **SPDX SBOM** (`sbom.spdx.json`) and build provenance artifact.
-3. **Vulnerability fix and gate:** Scans with **Trivy** (table, JSON, SARIF upload to Code Scanning, and blocking `--ignore-unfixed` gate) and **Grype** (blocking `--only-fixed` gate, severity cutoff `negligible`), diffs against the previous scan to report resolved CVEs, and retains scan artifacts for 90 days.
-4. **Smoke test:** Executes [`tests/smoke.sh`](https://github.com/dgcosenza/synchronet-docker/blob/main/tests/smoke.sh) to verify fresh `/sbbs-data` initialization, non-root `sbbs` (UID/GID `1000`), `cap_net_bind_service`, HTTP webv4 readiness, and a negative closed-port probe.
-5. **Publish:** On non-PR builds when registry credentials are configured, pushes `nightly`, `latest`, `<version>`, `<version>-<YYYYMMDD>`, `<version>-<commit>-<YYYYMMDD>`, `sha-<short>`, and immutable `<version>-<commit>` tags to Docker Hub and records the digest.
-6. **Automated documentation sync:** Commits updated `versions.json`, the README `Current Versions` block, and a dated `CHANGELOG.md` entry (upstream changes, resolved CVEs, and digest) via `github-actions[bot]` with `[skip ci]` when content changes, then syncs the Docker Hub overview and short description via `peter-evans/dockerhub-description`.
-7. **Failure alerting:** If any step fails on `main` or a scheduled run, CI opens or updates a single GitHub issue labeled `ci-failure` with the failing job and run link, and automatically closes it on the next green run.
+1. **Resolve:** Checks latest Synchronet `master` commit (`SynchronetBBS/sbbs`), validates `sbbsdefs.h`, resolves latest SHA-256-verified Deno and Debian 13 slim base digest.
+2. **Rebuild & gate:** Daily `--no-cache` build on `linux/amd64`, SPDX/CycloneDX SBOMs, Dive >=95%, Trivy + Grype (0 fixable CVEs of any severity), SARIF upload, and [`tests/smoke.sh`](https://github.com/dgcosenza/synchronet-docker/blob/main/tests/smoke.sh).
+3. **Publish & attest:** Mirrors identical Cosign-signed SLSA L3 digests to GHCR, Docker Hub, and configured secondary registries, plus a signed GitHub Release.
+4. **Docs sync & alerting:** Auto-commits `versions.json`/`README.md`/`CHANGELOG.md`, syncs Docker Hub overview, and manages a single `ci-failure` issue.
 
----
 
 ## Design Decisions
 
@@ -308,7 +305,6 @@ docker buildx build \
 - **120-second healthcheck interval:** Synchronet records a guest login/logout session for every HTTP probe; 120 seconds keeps liveness detection responsive without flooding BBS logs.
 - **No `no-new-privileges`:** Required because `sbbs-init` reconciles `/sbbs-data` ownership and `sbbs` uses `cap_net_bind_service` to bind classic BBS ports below 1024.
 
----
 
 ## License
 
