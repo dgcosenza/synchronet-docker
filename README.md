@@ -52,16 +52,21 @@ The persistent data mount follows the `/sbbs-data` layout used by `bbsio/synchro
 <!-- versions:start -->
 | Component | Resolved Version |
 | --- | --- |
-| Synchronet BBS | `3.22a (48bfa23)` |
+| Synchronet BBS | `3.22a (95ac875)` |
 | Deno | `2.9.8` |
 | Base OS | `Debian 13.8 (debian:13.8-slim)` |
 | Architectures | `linux/amd64` |
 | Uncompressed size (per arch) | `amd64: 136.0 MB` |
-| Last verified build (UTC) | `2026-11-27` |
-| Published multi-arch digest | `dgcosenza/synchronet@sha256:d9cf7fa11c2c4d05b0c764c3128b117c632316ad7d4f565c8ae49a1137bc6a83` |
-| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:d9cf7fa11c2c4d05b0c764c3128b117c632316ad7d4f565c8ae49a1137bc6a83` |
+| Last verified build (UTC) | `2026-11-28` |
+| Published multi-arch digest | `dgcosenza/synchronet@sha256:a6b71b1d4337583107b333813f77d3b0989b938113cc7e3dcdc90348b19b66c9` |
+| GHCR mirror | `ghcr.io/dgcosenza/synchronet@sha256:a6b71b1d4337583107b333813f77d3b0989b938113cc7e3dcdc90348b19b66c9` |
 | Supply chain | Cosign OIDC signed + SPDX & CycloneDX SBOM attestations + SLSA Build L3 provenance |
 | Security gate (Trivy + Grype on SBOM) | **0 fixable findings of any severity** (33 upstream-unfixed) |
+
+**Recent upstream changes:**
+- Synchronet master advanced from 48bfa23 to 95ac875.
+- 85c37bd: Preserve CSI parameter values across colon subparameters
+- 95ac875: Preserve the selected cursor style across DECTCEM visibility changes
 <!-- versions:end -->
 
 

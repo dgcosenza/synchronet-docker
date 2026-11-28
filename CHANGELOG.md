@@ -17,6 +17,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Mai
 
 <!-- changelog:auto -->
 
+## [3.22a-95ac875] — 2026-11-28
+
+### Automated Daily Build
+- Verified components: Synchronet BBS `3.22a (95ac875)`, Deno `2.9.8`, Base OS `Debian 13.8 (debian:13.8-slim)`.
+- Architectures verified: `linux/amd64` (native smoke tests + Dive efficiency gate).
+- Upstream changes:
+  - Synchronet master advanced from 48bfa23 to 95ac875.
+  - 85c37bd: Preserve CSI parameter values across colon subparameters
+  - 95ac875: Preserve the selected cursor style across DECTCEM visibility changes
+- Vulnerability gate: **0 fixable findings of any severity** in Trivy and Grype (SBOM scan) (33 upstream-unfixed).
+- Published multi-arch digest (Docker Hub + GHCR): `dgcosenza/synchronet@sha256:a6b71b1d4337583107b333813f77d3b0989b938113cc7e3dcdc90348b19b66c9` (Cosign OIDC signed + SPDX/CycloneDX SBOM + SLSA L3 provenance).
+
+---
+
 ## [3.22a-48bfa23] — 2026-11-27
 
 ### Automated Daily Build
